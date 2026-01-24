@@ -208,7 +208,11 @@ resetBtn.addEventListener("click", () => {
     document.getElementById("machine-input").value = "";
     document.getElementById("operator-input").value = "";
     document.getElementById("notes-input").value = "";
+
+    // Optional: clear current run data
+    currentRun = null;
 });
+
 
 function loadRuns() {
     fetch("/runs")

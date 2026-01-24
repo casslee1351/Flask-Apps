@@ -1,18 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Cycle Time Recorder</title>
-        <link rel="stylesheet" href="styles.css" />
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Cycle Time Recorder</title>
-        <link rel="stylesheet" href="styles.css" />
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cycle Time Recorder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-
 
 <body>
     <div class="app-container">
@@ -65,55 +58,9 @@
         </div>
 
     </div>
-    <div class="app-container">
+    
 
-        <!-- Header -->
-        <div class="header">
-            <h1>Cycle Time Recorder</h1>
-        </div>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
 
-        <!-- Metadata -->
-        <div class="metadata">
-            <label for="process-input">Process</label>
-            <input id="process-input" type="text" placeholder="e.g. Assembly A" />
-
-            <label for="operation-input">Operation</label>
-            <input id="operation-input" type="text" placeholder="e.g. Op 20" />
-
-            <label for="operator-input">Operator</label>
-            <input id="operator-input" type="text" placeholder="Optional" />
-
-            <label for="notes-input">Notes</label>
-            <input id="notes-input" type="text" placeholder="Optional" />
-        </div>
-
-        <!-- Timer -->
-        <div class="timer-container">
-            <div id="timer-display" class="timer-display">
-                00:00.000
-            </div>
-        </div>
-
-        <!-- Controls -->
-        <div class="controls">
-            <button id="start-button" class="start-button">
-                START
-            </button>
-
-            <button id="stop-button" class="stop-button" disabled>
-                STOP
-            </button>
-
-            <button id="save-button" class="save-button" disabled>
-                SAVE
-            </button>
-        </div>
-
-        <!-- Status -->
-        <div id="status-text" class="status">
-            Status: Ready
-        </div>
-
-    </div>
 </body>
 </html>

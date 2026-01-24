@@ -87,47 +87,46 @@ stopBtn.addEventListener("click", () => {
 saveBtn.addEventListener("click", () => {
     statusText.textContent = "Status: Saved";
     saveBtn.disabled = true; */
-    startBtn.addEventListener("click", () => {
-        if (interval !== null) return;
 
-        // ----- REQUIRED FIELD VALIDATION -----
-        const process = document.getElementById("process").value;
-        const machine = document.getElementById("machine").value;
-        const operator = document.getElementById("operator").value;
+    if (interval !== null) return;
 
-        if (!process || !machine || !operator) {
-            showModal();
-            return;
-        }
+    // ----- REQUIRED FIELD VALIDATION -----
+    const process = document.getElementById("process").value;
+    const machine = document.getElementById("machine").value;
+    const operator = document.getElementById("operator").value;
+
+    if (!process || !machine || !operator) {
+        showModal();
+        return;
+    }
 
 
-        // ----- PAYLOAD -----
-        const payload = {
-            process: process,
-            machine: machine,
-            operator: operator,
-            notes: document.getElementById("notes-input").value
-        };
+    // ----- PAYLOAD -----
+    const payload = {
+        process: process,
+        machine: machine,
+        operator: operator,
+        notes: document.getElementById("notes-input").value
+    };
 
-        fetch("/start", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-
-        startTime = performance.now();
-        interval = setInterval(() => {
-            const elapsed = performance.now() - startTime;
-            timerDisplay.textContent = formatTime(elapsed);
-        }, 30);
-
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
-        saveBtn.disabled = true;
-        statusText.textContent = "Status: Running";
+    fetch("/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
     });
 
+    startTime = performance.now();
+    interval = setInterval(() => {
+        const elapsed = performance.now() - startTime;
+        timerDisplay.textContent = formatTime(elapsed);
+    }, 30);
+
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    saveBtn.disabled = true;
+    statusText.textContent = "Status: Running";
 });
+
 
 stopBtn.addEventListener("click", () => {
     // Check if timer is running
@@ -150,6 +149,33 @@ stopBtn.addEventListener("click", () => {
     resetBtn.disabled = false;
     saveBtn.disabled = false;
     statusText.textContent = "Status: Stopped";
+});
+
+saveBtn.addEventListener("click", () => {
+    // stop must have happened already
+    if (interval !== null) {
+        alert("Please stop the timer before saving.");
+        return;
+    }
+
+    fetch("/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            // optional: send notes if changed
+            notes: document.getElementById("notes-input").value
+        })
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "saved") {
+                statusText.textContent = "Status: Saved";
+                saveBtn.disabled = true;
+                alert("Run saved successfully!");
+            } else {
+                alert(data.message || "Error saving run.");
+            }
+        });
 });
 
 const resetBtn = document.getElementById("reset-button");
@@ -178,5 +204,17 @@ resetBtn.addEventListener("click", () => {
     document.getElementById("operator-input").value = "";
     document.getElementById("notes-input").value = "";
 });
+
+function loadRuns() {
+    fetch("/runs")
+        .then(res => res.json())
+        .then(data => {
+            console.log(data);
+            // display runs in the UI here
+        });
+}
+
+// load on page load
+loadRuns();
 
 

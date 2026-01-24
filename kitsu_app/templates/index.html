@@ -1,88 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cycle Time Recorder</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Cycle Timer</title>
+        <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
-    <div class="app-container">
+    <div class="app-shell">
+        <div class="app-container">
 
-        <!-- Header -->
-        <div class="header">
-            <h1>Cycle Time Recorder</h1>
-        </div>
-
-        <!-- Metadata -->
-        <div class="metadata">
-            <label for="process-input">Process</label>
-            <!--<input id="process-input" type="text" placeholder="e.g. Assembly A" /> --> 
-         
-            <select id="process" name="process">
-            <option value="">Select a process</option>
-            <option value="Process A">Process A</option>
-            <option value="Process B">Process B</option>
-            <option value="Process C">Process C</option>
-            </select>
-
-            <label for="machine-input">Machine</label>
-            <!--<input id="machine-input" type="text" placeholder="e.g. Machine 1" />-->
-            <select id="machine" name="machine">
-            <option value="">Select a machine</option>
-            <option value="Machine A">Machine A</option>
-            <option value="Machine B">Machine B</option>
-            <option value="Machine C">Machine C</option>
-            </select>
-
-            <label for="operator-input">Operator</label>
-            <!--<input id="operator-input" type="text" placeholder="Optional" />-->
-            <select id="operator" name="operator">
-            <option value="">Select an operator</option>
-            <option value="Operator A">Operator A</option>
-            <option value="Operator B">Operator B</option>
-            <option value="Operator C">Operator C</option>
-            </select>
-
-            <label for="notes-input">Notes</label>
-            <input id="notes-input" type="text" placeholder="Optional" />
-        </div>
-
-        <!-- Timer -->
-        <div class="timer-container">
-            <div id="timer-display" class="timer-display">
-                00:00.000
+            <!-- Header -->
+            <div class="header">
+                <h1>Cycle Timer</h1>
             </div>
+
+            <!-- Metadata -->
+            <section class="metadata">
+                <div class="field">
+                    <label for="process-type">Process</label>
+                    <select id="process-type" class="field-control field-select" required>
+                        <option value="">Select a process</option>
+                        <option value="Process A">Process A</option>
+                        <option value="Process B">Process B</option>
+                        <option value="Process C">Process C</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="machine-type">Machine</label>
+                    <select id="machine-type" class="field-control field-select">
+                        <option value="">Select a machine</option>
+                        <option value="Machine A">Machine A</option>
+                        <option value="Machine B">Machine B</option>
+                        <option value="Machine C">Machine C</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="operator-type">Operator</label>
+                    <select id="operator-type" class="field-control field-select">
+                        <option value="">Select an operator</option>
+                        <option value="Operator A">Operator A</option>
+                        <option value="Operator B">Operator B</option>
+                        <option value="Operator C">Operator C</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="notes-input">Notes</label>
+                    <input id="notes-input" class="field-control" type="text" placeholder="Optional" />
+                </div>
+            </section>
+
+            <!-- Timer -->
+            <section class="timer-container">
+                <div class="timer-label">Elapsed Time</div>
+                <div id="timer-display" class="timer-display">
+                        00:00.000
+                </div>
+            </section>
+
+            <!-- Controls -->
+            <section class="controls">
+                <button class="btn primary start-button">Start</button>
+                <button class="btn danger stop-button" disabled>Stop</button>
+                <button class="btn save-reset save-button" disabled>Save</button>
+                <button class="btn save-reset save-button" disabled>Reset</button>
+            </section>
+
+            <!-- Status -->
+            <section class="status">
+                <span class="status-dot idle"></span>
+                <span class="status-text">Ready to start</span>
+            </section>
+
         </div>
-
-        <!-- Controls -->
-        <div class="controls">
-            <button id="start-button" class="start-button">
-                START
-            </button>
-
-            <button id="stop-button" class="stop-button" disabled>
-                STOP
-            </button>
-
-            <button id="reset-button" class="reset-button" disabled>
-                RESET
-            </button>
-
-            <button id="save-button" class="save-button" disabled>
-                SAVE
-            </button>
-        </div>
-
-        <!-- Status -->
-        <div id="status-text" class="status">
-            Status: Ready
-        </div>
-
     </div>
-
-    <!-- Modal -->
+        <!-- Modal -->
     <div id="validationModal" class="modal">
     <div class="modal-content">
         <span class="close-btn">&times;</span>
@@ -95,6 +89,5 @@
     
 
     <script src="{{ url_for('static', filename='app.js') }}"></script>
-
 </body>
 </html>

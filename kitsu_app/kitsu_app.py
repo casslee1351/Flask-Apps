@@ -41,15 +41,23 @@ def start():
 @app.route("/stop", methods=["POST"])
 def stop():
     global current_run
-    current_run["end_time"] = datetime.now()
-    current_run["duration"] = (current_run["end_time"] - current_run["start_time"]).total_seconds()
 
-    return jsonify({"status": "stopped", "duration": current_run["duration"]}), 200
+    data = request.json
+    duration = data.get("duration")
+
+    if duration is None:
+        return jsonify({"status": "error", "message": "Duration missing"}), 400
+
+    current_run["end_time"] = datetime.now()
+    current_run["duration"] = duration
+
+    return jsonify({"status": "stopped", "duration": duration}), 200
 
 
 @app.route("/save", methods=["POST"])
 def save():
     global current_run
+    data = request.json
 
     # Ensure we have full run data
     if not current_run.get("start_time") or not current_run.get("end_time"):
@@ -61,7 +69,7 @@ def save():
         process=current_run["process"],
         machine=current_run["machine"],
         operator=current_run["operator"],
-        notes=current_run.get("notes", ""),
+        notes=data.get("notes", ""),
         start_time=current_run["start_time"],
         end_time=current_run["end_time"],
         duration=duration

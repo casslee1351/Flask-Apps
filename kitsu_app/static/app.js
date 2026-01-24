@@ -129,27 +129,32 @@ saveBtn.addEventListener("click", () => {
 
 
 stopBtn.addEventListener("click", () => {
-    // Check if timer is running
-    if (interval === null) {
-        alert("Timer is not running.");
-        return;
-    }
+    if (interval === null) return;
 
     clearInterval(interval);
     interval = null;
 
-    fetch("/stop", { method: "POST" })
+    // Calculate duration using the same timer as display
+    const elapsedMs = performance.now() - startTime;
+    const durationSeconds = elapsedMs / 1000;
+
+    fetch("/stop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ duration: durationSeconds })
+    })
         .then(res => res.json())
         .then(data => {
-            console.log("Duration saved:", data.duration);
+            console.log("Stopped duration:", data.duration);
         });
 
     startBtn.disabled = false;
     stopBtn.disabled = true;
-    resetBtn.disabled = false;
     saveBtn.disabled = false;
+    resetBtn.disabled = false;
     statusText.textContent = "Status: Stopped";
 });
+
 
 saveBtn.addEventListener("click", () => {
     // stop must have happened already

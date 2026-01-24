@@ -38,29 +38,14 @@ def start():
 
     return jsonify({"status": "started"}), 200
 
-
 @app.route("/stop", methods=["POST"])
 def stop():
     global current_run
     current_run["end_time"] = datetime.now()
+    current_run["duration"] = (current_run["end_time"] - current_run["start_time"]).total_seconds()
 
-    # Calculate duration in seconds
-    duration = (current_run["end_time"] - current_run["start_time"]).total_seconds()
+    return jsonify({"status": "stopped", "duration": current_run["duration"]}), 200
 
-    # Save to SQLite
-    run = TimerRun(
-        process=current_run["process"],
-        machine=current_run["machine"],
-        operator=current_run["operator"],
-        notes=current_run.get("notes", ""),
-        start_time=current_run["start_time"],
-        end_time=current_run["end_time"],
-        duration=duration
-    )
-    db.session.add(run)
-    db.session.commit()
-
-    return jsonify({"status": "saved", "duration": duration}), 200
 
 @app.route("/save", methods=["POST"])
 def save():

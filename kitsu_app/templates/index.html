@@ -66,6 +66,10 @@
                 STOP
             </button>
 
+            <button id="reset-button" class="reset-button" disabled>
+                RESET
+            </button>
+
             <button id="save-button" class="save-button" disabled>
                 SAVE
             </button>
@@ -77,6 +81,17 @@
         </div>
 
     </div>
+
+    <!-- Modal -->
+    <div id="validationModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h3>Required Fields Missing</h3>
+        <p>Please fill in Process, Machine, and Operator before starting the timer.</p>
+        <button id="modalOkBtn" class="modalOkBtn">OK</button>
+    </div>
+    </div>
+
     
 
     <script src="{{ url_for('static', filename='app.js') }}"></script>

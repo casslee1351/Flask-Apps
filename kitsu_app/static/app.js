@@ -204,9 +204,9 @@ resetBtn.addEventListener("click", () => {
     statusText.textContent = "Status: Reset";
 
     // Clear form fields
-    document.getElementById("process-input").value = "";
-    document.getElementById("machine-input").value = "";
-    document.getElementById("operator-input").value = "";
+    document.getElementById("process").value = "";
+    document.getElementById("machine").value = "";
+    document.getElementById("operator").value = "";
     document.getElementById("notes-input").value = "";
 
     // Optional: clear current run data

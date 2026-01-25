@@ -4,6 +4,7 @@ let interval = null;
 const startBtn = document.getElementById("start-button");
 const stopBtn = document.getElementById("stop-button");
 const saveBtn = document.getElementById("save-button");
+const resetBtn = document.getElementById("reset-button");
 const timerDisplay = document.getElementById("timer-display");
 const statusText = document.getElementById("status-text");
 
@@ -91,9 +92,9 @@ saveBtn.addEventListener("click", () => {
     if (interval !== null) return;
 
     // ----- REQUIRED FIELD VALIDATION -----
-    const process = document.getElementById("process").value;
-    const machine = document.getElementById("machine").value;
-    const operator = document.getElementById("operator").value;
+    const process = document.getElementById("process-type").value;
+    const machine = document.getElementById("machine-type").value;
+    const operator = document.getElementById("operator-type").value;
 
     if (!process || !machine || !operator) {
         showModal();
@@ -124,7 +125,9 @@ saveBtn.addEventListener("click", () => {
     startBtn.disabled = true;
     stopBtn.disabled = false;
     saveBtn.disabled = true;
-    statusText.textContent = "Status: Running";
+
+    // statusText.textContent = "Status: Running";
+    setStatus("Ready to start", "idle");
 });
 
 
@@ -152,7 +155,9 @@ stopBtn.addEventListener("click", () => {
     stopBtn.disabled = true;
     saveBtn.disabled = false;
     resetBtn.disabled = false;
-    statusText.textContent = "Status: Stopped";
+
+    // statusText.textContent = "Status: Stopped";
+    setStatus("Stopped", "paused");
 });
 
 
@@ -174,7 +179,7 @@ saveBtn.addEventListener("click", () => {
         .then(res => res.json())
         .then(data => {
             if (data.status === "saved") {
-                statusText.textContent = "Status: Saved";
+                setStatus("Saved", "idle");
                 saveBtn.disabled = true;
                 alert("Run saved successfully!");
             } else {
@@ -183,7 +188,6 @@ saveBtn.addEventListener("click", () => {
         });
 });
 
-const resetBtn = document.getElementById("reset-button");
 
 resetBtn.addEventListener("click", () => {
     // Stop timer if running
@@ -204,14 +208,25 @@ resetBtn.addEventListener("click", () => {
     statusText.textContent = "Status: Reset";
 
     // Clear form fields
-    document.getElementById("process").value = "";
-    document.getElementById("machine").value = "";
-    document.getElementById("operator").value = "";
+    document.getElementById("process-type").value = "";
+    document.getElementById("machine-type").value = "";
+    document.getElementById("operator-type").value = "";
     document.getElementById("notes-input").value = "";
 
     // Optional: clear current run data
     currentRun = null;
+
+    setStatus("Ready to start", "idle");
 });
+
+// Function to change the color of the status dot
+function setStatus(text, state) {
+    statusText.textContent = text;
+
+    statusDot.classList.remove("idle", "running", "paused");
+    statusDot.classList.add(state);
+}
+
 
 
 function loadRuns() {

@@ -43,8 +43,8 @@ body {
 
 /* ---- Metadata Section ---- */
 .metadata {
-    margin-bottom: 20px;
-    padding: 8px 0 12px;
+    margin-bottom: 18px;
+    padding: 4px 0 8px;
 }
 
 .field {
@@ -108,7 +108,7 @@ body {
 /* ---- Timer Display ---- */
 .timer-container {
     text-align: center;
-    margin: 24px 0 24px;
+    margin: 18px 0 16px;
     padding: 2px 0px 20px 0px;
 }
 

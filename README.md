@@ -15,3 +15,6 @@ This repository is where I keep all of my flask apps for development or experime
 	- Syncing location of operator with timestamps?
 - Cassidy to add extra button for operator timing
 	- What are some other design patterns for this?
+
+## Flask API
+This Flask app is meant for experimenting with Next.js. Mostly just an example.

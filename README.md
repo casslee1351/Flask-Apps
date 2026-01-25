@@ -6,8 +6,8 @@ This repository is where I keep all of my flask apps for development or experime
 - Python 3.10.0
 
 **To Do**
-1. Add operator nad machine time differentiator
-2. Incorporate multiple versions so Jonny and Raad can choose whcih design they prefer
+1. Add operator and machine time differentiator
+2. Incorporate multiple versions so Jonny and Raad can choose which design they prefer
 
 **Questions**
 - How do we measure cycle times without engineer?

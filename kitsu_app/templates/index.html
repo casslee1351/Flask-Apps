@@ -50,7 +50,18 @@
                     <label for="notes-input">Notes</label>
                     <input id="notes-input" class="field-control" type="text" placeholder="Optional" />
                 </div>
+                <label>
+                    <input type="radio" name="timeType" value="operator" checked>
+                    Operator Time
+                    </label>
+
+                    <label>
+                    <input type="radio" name="timeType" value="machine">
+                    Machine Time
+                </label>
             </section>
+
+
 
             <!-- Timer -->
             <section class="timer-container">
@@ -81,7 +92,7 @@
     <div class="modal-content">
         <span class="close-btn">&times;</span>
         <h3>Required Fields Missing</h3>
-        <p>Please fill in Process, Machine, and Operator before starting the timer.</p>
+        <p>Please select Process, Machine, Operator AND Time Type.</p>
         <button id="modalOkBtn" class="modalOkBtn">OK</button>
     </div>
     </div>

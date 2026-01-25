@@ -8,6 +8,11 @@ const resetBtn = document.getElementById("reset-button");
 const timerDisplay = document.getElementById("timer-display");
 const statusText = document.getElementById("status-text");
 
+function getSelectedTimeType() {
+    return document.querySelector('input[name="timeType"]:checked')?.value;
+}
+
+
 function formatTime(ms) {
     const totalSeconds = Math.floor(ms / 1000);
     const minutes = Math.floor(totalSeconds / 60);
@@ -39,75 +44,116 @@ window.addEventListener("click", (e) => {
 });
 
 
+// startBtn.addEventListener("click", () => {
+//     /*if (interval !== null) return;
+
+//     const payload = {
+//         process: document.getElementById("process-input").value,
+//         machine: document.getElementById("machine-input").value,
+//         operator: document.getElementById("operator-input").value,
+//         notes: document.getElementById("notes-input").value
+//     };
+
+//     fetch("/start", {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify(payload)
+//     });
+
+//     startTime = performance.now();
+//     interval = setInterval(() => {
+//         const elapsed = performance.now() - startTime;
+//         timerDisplay.textContent = formatTime(elapsed);
+//     }, 30);
+
+//     startBtn.disabled = true;
+//     stopBtn.disabled = false;
+//     saveBtn.disabled = true;
+//     statusText.textContent = "Status: Running";
+// });
+
+// stopBtn.addEventListener("click", () => {
+//     if (interval === null) return;
+
+//     clearInterval(interval);
+//     interval = null;
+
+//     fetch("/stop", { method: "POST" })
+//         .then(res => res.json())
+//         .then(data => {
+//             console.log("Duration saved:", data.duration);
+//         });
+
+//     startBtn.disabled = false;
+//     stopBtn.disabled = true;
+//     saveBtn.disabled = false;
+//     statusText.textContent = "Status: Stopped";
+// });
+
+// saveBtn.addEventListener("click", () => {
+//     statusText.textContent = "Status: Saved";
+//     saveBtn.disabled = true; */
+
+//     if (interval !== null) return;
+
+//     // ----- REQUIRED FIELD VALIDATION -----
+//     const process = document.getElementById("process-type").value;
+//     const machine = document.getElementById("machine-type").value;
+//     const operator = document.getElementById("operator-type").value;
+
+//     if (!process || !machine || !operator) {
+//         showModal();
+//         return;
+//     }
+
+
+//     // ----- PAYLOAD -----
+//     const payload = {
+//         process: process,
+//         machine: machine,
+//         operator: operator,
+//         notes: document.getElementById("notes-input").value
+//     };
+
+//     fetch("/start", {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify(payload)
+//     });
+
+//     startTime = performance.now();
+//     interval = setInterval(() => {
+//         const elapsed = performance.now() - startTime;
+//         timerDisplay.textContent = formatTime(elapsed);
+//     }, 30);
+
+//     startBtn.disabled = true;
+//     stopBtn.disabled = false;
+//     saveBtn.disabled = true;
+
+//     // statusText.textContent = "Status: Running";
+//     setStatus("Ready to start", "idle");
+// });
+
 startBtn.addEventListener("click", () => {
-    /*if (interval !== null) return;
-
-    const payload = {
-        process: document.getElementById("process-input").value,
-        machine: document.getElementById("machine-input").value,
-        operator: document.getElementById("operator-input").value,
-        notes: document.getElementById("notes-input").value
-    };
-
-    fetch("/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    });
-
-    startTime = performance.now();
-    interval = setInterval(() => {
-        const elapsed = performance.now() - startTime;
-        timerDisplay.textContent = formatTime(elapsed);
-    }, 30);
-
-    startBtn.disabled = true;
-    stopBtn.disabled = false;
-    saveBtn.disabled = true;
-    statusText.textContent = "Status: Running";
-});
-
-stopBtn.addEventListener("click", () => {
-    if (interval === null) return;
-
-    clearInterval(interval);
-    interval = null;
-
-    fetch("/stop", { method: "POST" })
-        .then(res => res.json())
-        .then(data => {
-            console.log("Duration saved:", data.duration);
-        });
-
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
-    saveBtn.disabled = false;
-    statusText.textContent = "Status: Stopped";
-});
-
-saveBtn.addEventListener("click", () => {
-    statusText.textContent = "Status: Saved";
-    saveBtn.disabled = true; */
-
     if (interval !== null) return;
 
-    // ----- REQUIRED FIELD VALIDATION -----
     const process = document.getElementById("process-type").value;
     const machine = document.getElementById("machine-type").value;
     const operator = document.getElementById("operator-type").value;
+    const timeType = getSelectedTimeType();
 
-    if (!process || !machine || !operator) {
+    if (!process || !machine || !operator || !timeType) {
         showModal();
         return;
     }
 
-
-    // ----- PAYLOAD -----
     const payload = {
         process: process,
         machine: machine,
         operator: operator,
-        notes: document.getElementById("notes-input").value
+        notes: document.getElementById("notes-input").value,
+        time_type: timeType
     };
 
     fetch("/start", {
@@ -126,9 +172,9 @@ saveBtn.addEventListener("click", () => {
     stopBtn.disabled = false;
     saveBtn.disabled = true;
 
-    // statusText.textContent = "Status: Running";
     setStatus("Ready to start", "idle");
 });
+
 
 
 stopBtn.addEventListener("click", () => {

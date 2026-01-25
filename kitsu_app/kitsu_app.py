@@ -16,6 +16,7 @@ class TimerRun(db.Model):
     machine = db.Column(db.String(100), nullable=False)
     operator = db.Column(db.String(100), nullable=False)
     notes = db.Column(db.String(500))
+    time_type = db.Column(db.String(50), nullable=False)
     start_time = db.Column(db.DateTime, nullable=False)
     end_time = db.Column(db.DateTime, nullable=False)
     duration = db.Column(db.Float, nullable=False)
@@ -29,12 +30,17 @@ current_run = {}
 
 @app.route("/start", methods=["POST"])
 def start():
+    global current_run
     data = request.json
-    current_run["process"] = data.get("process")
-    current_run["machine"] = data.get("machine")
-    current_run["operator"] = data.get("operator")
-    current_run["notes"] = data.get("notes")
-    current_run["start_time"] = datetime.now()
+
+    current_run = {
+        "process": data["process"],
+        "machine": data["machine"],
+        "operator": data["operator"],
+        "notes": data.get("notes", ""),
+        "time_type": data.get("time_type"),
+        "start_time": datetime.now()
+    }
 
     return jsonify({"status": "started"}), 200
 
@@ -70,6 +76,7 @@ def save():
         machine=current_run["machine"],
         operator=current_run["operator"],
         notes=data.get("notes", ""),
+        time_type=current_run["time_type"],
         start_time=current_run["start_time"],
         end_time=current_run["end_time"],
         duration=duration

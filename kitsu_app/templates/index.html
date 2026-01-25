@@ -62,16 +62,16 @@
 
             <!-- Controls -->
             <section class="controls">
-                <button class="btn primary start-button">Start</button>
-                <button class="btn danger stop-button" disabled>Stop</button>
-                <button class="btn save-reset save-button" disabled>Save</button>
-                <button class="btn save-reset save-button" disabled>Reset</button>
+                <button id="start-button" class="btn primary start-button">Start</button>
+                <button id="stop-button" class="btn danger stop-button" disabled>Stop</button>
+                <button id="save-button" class="btn save-reset save-button" disabled>Save</button>
+                <button id="reset-button" class="btn save-reset reset-button" disabled>Reset</button>
             </section>
 
             <!-- Status -->
             <section class="status">
                 <span class="status-dot idle"></span>
-                <span class="status-text">Ready to start</span>
+                <span id="status-text">Ready to start</span>
             </section>
 
         </div>

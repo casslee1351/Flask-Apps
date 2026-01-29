@@ -70,7 +70,7 @@ def save():
     if not current_run.get("start_time") or not current_run.get("end_time"):
         return jsonify({"status": "error", "message": "No completed run to save."}), 400
 
-    duration = (current_run["end_time"] - current_run["start_time"]).total_seconds()
+    duration = (current_run["end_time"] - current_run["start_time"]).total_seconds() # rename to total cycle time
     current_run["laps"] = request.json.get("laps", [])
 
     run = TimerRun(

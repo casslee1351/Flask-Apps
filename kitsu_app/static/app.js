@@ -1,5 +1,7 @@
 let startTime = null;
 let interval = null;
+let laps = [];
+let lastLapTime = null;
 
 const startBtn = document.getElementById("start-button");
 const stopBtn = document.getElementById("stop-button");
@@ -7,6 +9,8 @@ const saveBtn = document.getElementById("save-button");
 const resetBtn = document.getElementById("reset-button");
 const timerDisplay = document.getElementById("timer-display");
 const statusText = document.getElementById("status-text");
+const lapBtn = document.getElementById("lap-button");
+const statusDot = document.getElementById("status-dot");
 
 function getSelectedTimeType() {
     return document.querySelector('input[name="timeType"]:checked')?.value;
@@ -142,11 +146,13 @@ startBtn.addEventListener("click", () => {
     const machine = document.getElementById("machine-type").value;
     const operator = document.getElementById("operator-type").value;
     const timeType = getSelectedTimeType();
+    const lapBtn = document.getElementById("lap-button");
 
     if (!process || !machine || !operator || !timeType) {
         showModal();
         return;
     }
+
 
     const payload = {
         process: process,
@@ -168,9 +174,14 @@ startBtn.addEventListener("click", () => {
         timerDisplay.textContent = formatTime(elapsed);
     }, 30);
 
+    laps = [];
+    lastLapTime = startTime;
+    document.getElementById("lap-list").innerHTML = "";
+
     startBtn.disabled = true;
     stopBtn.disabled = false;
     saveBtn.disabled = true;
+    lapBtn.disabled = false;
 
     setStatus("Ready to start", "idle");
 });
@@ -201,6 +212,8 @@ stopBtn.addEventListener("click", () => {
     stopBtn.disabled = true;
     saveBtn.disabled = false;
     resetBtn.disabled = false;
+    lapBtn.disabled = true;
+
 
     // statusText.textContent = "Status: Stopped";
     setStatus("Stopped", "paused");
@@ -218,8 +231,8 @@ saveBtn.addEventListener("click", () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            // optional: send notes if changed
-            notes: document.getElementById("notes-input").value
+            notes: document.getElementById("notes-input").value,
+            laps: laps
         })
     })
         .then(res => res.json())
@@ -245,10 +258,16 @@ resetBtn.addEventListener("click", () => {
     // Reset display
     timerDisplay.textContent = "00:00.000";
 
+    laps = [];
+    lastLapTime = null;
+    document.getElementById("lap-list").innerHTML = "";
+
     // Reset button states
     startBtn.disabled = false;
     stopBtn.disabled = true;
     saveBtn.disabled = true;
+    lapBtn.disabled = true;
+
 
     // Reset status text
     statusText.textContent = "Status: Reset";
@@ -264,6 +283,30 @@ resetBtn.addEventListener("click", () => {
 
     setStatus("Ready to start", "idle");
 });
+
+lapBtn.addEventListener("click", () => {
+    if (!startTime) return;
+    console.log("Laps:", laps);
+
+    const now = performance.now();
+    const lapDuration = (now - lastLapTime) / 1000;
+    const totalElapsed = (now - startTime) / 1000;
+
+    const lap = {
+        lap_number: laps.length + 1,
+        lap_duration: lapDuration,
+        total_time: totalElapsed
+    };
+
+    laps.push(lap);
+    lastLapTime = now;
+
+    // UI
+    const li = document.createElement("li");
+    li.textContent = `Lap ${lap.lap_number}: ${lapDuration.toFixed(2)}s (Total: ${totalElapsed.toFixed(2)}s)`;
+    document.getElementById("lap-list").appendChild(li);
+});
+
 
 // Function to change the color of the status dot
 function setStatus(text, state) {

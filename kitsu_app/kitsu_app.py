@@ -20,6 +20,7 @@ class TimerRun(db.Model):
     start_time = db.Column(db.DateTime, nullable=False)
     end_time = db.Column(db.DateTime, nullable=False)
     duration = db.Column(db.Float, nullable=False)
+    laps = db.Column(db.JSON)
 
 # Create the database tables
 with app.app_context():
@@ -70,6 +71,7 @@ def save():
         return jsonify({"status": "error", "message": "No completed run to save."}), 400
 
     duration = (current_run["end_time"] - current_run["start_time"]).total_seconds()
+    current_run["laps"] = request.json.get("laps", [])
 
     run = TimerRun(
         process=current_run["process"],
@@ -79,7 +81,8 @@ def save():
         time_type=current_run["time_type"],
         start_time=current_run["start_time"],
         end_time=current_run["end_time"],
-        duration=duration
+        duration=duration,
+        laps=current_run.get("laps")
     )
 
     db.session.add(run)

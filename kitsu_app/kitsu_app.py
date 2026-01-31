@@ -92,10 +92,63 @@ def view_runs():
     runs = TimerRun.query.order_by(TimerRun.id.desc()).all()
     return render_template("view.html", runs=runs)
 
+@app.route("/dashboard")
+def dashboard():
+    return render_template("dashboard.html")
 
-@app.route('/')
-def hello():
-    return render_template('index.html')
+# =============================
+# Dashboard API
+# =============================
+
+@app.route("/api/dashboard/runs")
+def dashboard_runs():
+    query = TimerRun.query.order_by(TimerRun.start_time.desc()).limit(10)
+
+    process = request.args.get("process")
+    machine = request.args.get("machine")
+    operator = request.args.get("operator")
+
+    if process:
+        query = query.filter(TimerRun.process == process)
+    if machine:
+        query = query.filter(TimerRun.machine == machine)
+    if operator:
+        query = query.filter(TimerRun.operator == operator)
+
+    runs = query.all()
+    return jsonify([r.to_dict() for r in runs])
+
+
+@app.route("/api/dashboard/summary")
+def dashboard_summary():
+    query = TimerRun.query
+
+    process = request.args.get("process")
+    machine = request.args.get("machine")
+    operator = request.args.get("operator")
+
+    if process:
+        query = query.filter(TimerRun.process == process)
+    if machine:
+        query = query.filter(TimerRun.machine == machine)
+    if operator:
+        query = query.filter(TimerRun.operator == operator)
+
+    runs = query.all()
+    durations = [r.duration for r in runs]
+
+    if not durations:
+        return jsonify({
+            "avg_duration": 0,
+            "min_duration": 0,
+            "max_duration": 0
+        })
+
+    return jsonify({
+        "avg_duration": sum(durations) / len(durations),
+        "min_duration": min(durations),
+        "max_duration": max(durations)
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)

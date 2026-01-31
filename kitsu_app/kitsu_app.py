@@ -113,6 +113,91 @@ def view_runs():
     runs = TimerRun.query.order_by(TimerRun.id.desc()).all()
     return render_template("view.html", runs=runs)
 
+@app.route("/dashboard/recent")
+def dashboard_recent():
+    runs = (
+        TimerRun.query
+        .order_by(TimerRun.start_time.desc())
+        .limit(10)
+        .all()
+    )
+
+    return jsonify([{
+        "process": r.process,
+        "machine": r.machine,
+        "operator": r.operator,
+        "duration": r.duration,
+        "time_type": r.time_type,
+        "start_time": r.start_time.isoformat()
+    } for r in runs])
+
+@app.route("/dashboard/summary")
+def dashboard_summary():
+    runs = TimerRun.query.all()
+
+    if not runs:
+        return jsonify({
+            "count": 0,
+            "avg_duration": None,
+            "min_duration": None,
+            "max_duration": None
+        })
+
+    durations = [r.duration for r in runs]
+
+    return jsonify({
+        "count": len(durations),
+        "avg_duration": sum(durations) / len(durations),
+        "min_duration": min(durations),
+        "max_duration": max(durations)
+    })
+
+@app.route("/dashboard/recent/filtered")
+def dashboard_recent_filtered():
+    process = request.args.get("process")
+    machine = request.args.get("machine")
+    operator = request.args.get("operator")
+
+    query = TimerRun.query
+
+    if process:
+        query = query.filter(TimerRun.process == process)
+    if machine:
+        query = query.filter(TimerRun.machine == machine)
+    if operator:
+        query = query.filter(TimerRun.operator == operator)
+
+    runs = (
+        query.order_by(TimerRun.start_time.desc())
+        .limit(10)
+        .all()
+    )
+
+    return jsonify([{
+        "process": r.process,
+        "machine": r.machine,
+        "operator": r.operator,
+        "duration": r.duration,
+        "time_type": r.time_type,
+        "start_time": r.start_time.isoformat()
+    } for r in runs])
+
+@app.route("/dashboard/filters")
+def dashboard_filters():
+    processes = [p[0] for p in db.session.query(TimerRun.process).distinct()]
+    machines = [m[0] for m in db.session.query(TimerRun.machine).distinct()]
+    operators = [o[0] for o in db.session.query(TimerRun.operator).distinct()]
+
+    return jsonify({
+        "processes": processes,
+        "machines": machines,
+        "operators": operators
+    })
+
+
+@app.route("/dashboard")
+def dashboard():
+    return render_template("dashboard.html")
 
 @app.route('/')
 def hello():

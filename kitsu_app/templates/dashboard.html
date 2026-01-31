@@ -89,13 +89,13 @@
 
 <script>
 async function loadSummary() {
-    const res = await fetch('/dashboard/summary');
-    const data = await res.json();
+    const res = await fetch("/api/dashboard/summary");
+    const summary = await res.json();
 
-    document.getElementById('totalRuns').textContent = data.count;
-    document.getElementById('avgDuration').textContent = data.avg_duration?.toFixed(2) ?? '—';
-    document.getElementById('minDuration').textContent = data.min_duration?.toFixed(2) ?? '—';
-    document.getElementById('maxDuration').textContent = data.max_duration?.toFixed(2) ?? '—';
+    document.getElementById("totalRuns").textContent = summary.total_runs;
+    document.getElementById("avgDuration").textContent = summary.avg_duration.toFixed(2);
+    document.getElementById("minDuration").textContent = summary.min_duration.toFixed(2);
+    document.getElementById("maxDuration").textContent = summary.max_duration.toFixed(2);
 }
 
 async function loadRecentRuns() {

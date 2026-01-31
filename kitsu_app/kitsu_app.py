@@ -54,32 +54,33 @@ def save():
     global current_run
     data = request.json
 
-    # Ensure we have full run data
+    # Ensure we have a completed run
     if not current_run.get("start_time") or not current_run.get("end_time"):
         return jsonify({"status": "error", "message": "No completed run to save."}), 400
 
-    duration = (current_run["end_time"] - current_run["start_time"]).total_seconds() # rename to total cycle time
-    current_run["laps"] = request.json.get("laps", [])
+    # Set laps to empty if not present
+    laps = data.get("laps") or None
 
     run = TimerRun(
         process=current_run["process"],
         machine=current_run["machine"],
         operator=current_run["operator"],
         notes=data.get("notes", ""),
-        time_type=current_run["time_type"],
+        time_type=current_run.get("time_type"),  # must exist
         start_time=current_run["start_time"],
         end_time=current_run["end_time"],
-        duration=duration,
-        laps=current_run.get("laps")
+        duration=(current_run["end_time"] - current_run["start_time"]).total_seconds(),
+        laps=None
     )
 
     db.session.add(run)
     db.session.commit()
 
-    # Clear current run after saving
+    # Clear current_run
     current_run = {}
 
-    return jsonify({"status": "saved", "duration": duration}), 200
+    return jsonify({"status": "saved", "duration": run.duration}), 200
+
 
 
 ### --------------- Views -----------------
@@ -104,17 +105,6 @@ def dashboard():
 def dashboard_runs():
     query = TimerRun.query.order_by(TimerRun.start_time.desc()).limit(10)
 
-    process = request.args.get("process")
-    machine = request.args.get("machine")
-    operator = request.args.get("operator")
-
-    if process:
-        query = query.filter(TimerRun.process == process)
-    if machine:
-        query = query.filter(TimerRun.machine == machine)
-    if operator:
-        query = query.filter(TimerRun.operator == operator)
-
     runs = query.all()
     return jsonify([r.to_dict() for r in runs])
 
@@ -123,32 +113,33 @@ def dashboard_runs():
 def dashboard_summary():
     query = TimerRun.query
 
-    process = request.args.get("process")
-    machine = request.args.get("machine")
-    operator = request.args.get("operator")
-
-    if process:
-        query = query.filter(TimerRun.process == process)
-    if machine:
-        query = query.filter(TimerRun.machine == machine)
-    if operator:
-        query = query.filter(TimerRun.operator == operator)
+    # optional: apply filters if you want
+    # process = request.args.get("process")
+    # machine = request.args.get("machine")
+    # if process:
+    #     query = query.filter_by(process=process)
+    # if machine:
+    #     query = query.filter_by(machine=machine)
 
     runs = query.all()
+    total_runs = query.count()
     durations = [r.duration for r in runs]
 
     if not durations:
         return jsonify({
+            "total_runs": 0,
             "avg_duration": 0,
             "min_duration": 0,
             "max_duration": 0
         })
 
     return jsonify({
+        "total_runs": total_runs,                   # <-- added
         "avg_duration": sum(durations) / len(durations),
         "min_duration": min(durations),
         "max_duration": max(durations)
     })
+
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -130,7 +130,6 @@ stopBtn.addEventListener("click", () => {
 
 
 saveBtn.addEventListener("click", () => {
-    // stop must have happened already
     if (interval !== null) {
         alert("Please stop the timer before saving.");
         return;
@@ -144,17 +143,18 @@ saveBtn.addEventListener("click", () => {
             laps: laps
         })
     })
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === "saved") {
-                setStatus("Saved", "idle");
-                saveBtn.disabled = true;
-                alert("Run saved successfully!");
-            } else {
-                alert(data.message || "Error saving run.");
-            }
-        });
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "saved") {
+            setStatus("Saved", "idle");
+            saveBtn.disabled = true;
+            alert("Run saved successfully!");
+        } else {
+            alert(data.message || "Error saving run.");
+        }
+    });
 });
+
 
 
 resetBtn.addEventListener("click", () => {

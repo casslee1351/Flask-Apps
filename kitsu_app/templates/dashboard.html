@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Cycle Time Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f7f7f7;
+        }
+        h1 {
+            margin-bottom: 10px;
+        }
+        .summary {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            min-width: 180px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            margin-bottom: 30px;
+        }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background: #efefef;
+        }
+        canvas {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+<h1>Cycle Time Dashboard</h1>
+<p>Last 10 recorded runs</p>
+
+<div class="summary">
+    <div class="card">
+        <h3>Total Runs</h3>
+        <div id="totalRuns">—</div>
+    </div>
+    <div class="card">
+        <h3>Avg Duration (s)</h3>
+        <div id="avgDuration">—</div>
+    </div>
+    <div class="card">
+        <h3>Min Duration (s)</h3>
+        <div id="minDuration">—</div>
+    </div>
+    <div class="card">
+        <h3>Max Duration (s)</h3>
+        <div id="maxDuration">—</div>
+    </div>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Process</th>
+            <th>Machine</th>
+            <th>Operator</th>
+            <th>Type</th>
+            <th>Duration (s)</th>
+            <th>Start Time</th>
+        </tr>
+    </thead>
+    <tbody id="runsTable"></tbody>
+</table>
+
+<canvas id="durationChart" height="120"></canvas>
+
+<script>
+async function loadSummary() {
+    const res = await fetch('/dashboard/summary');
+    const data = await res.json();
+
+    document.getElementById('totalRuns').textContent = data.count;
+    document.getElementById('avgDuration').textContent = data.avg_duration?.toFixed(2) ?? '—';
+    document.getElementById('minDuration').textContent = data.min_duration?.toFixed(2) ?? '—';
+    document.getElementById('maxDuration').textContent = data.max_duration?.toFixed(2) ?? '—';
+}
+
+async function loadRecentRuns() {
+    const res = await fetch('/api/dashboard/runs');
+    const runs = await res.json();
+
+    const table = document.getElementById('runsTable');
+    table.innerHTML = '';
+
+    const labels = [];
+    const durations = [];
+
+    runs.reverse().forEach(r => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${r.process}</td>
+            <td>${r.machine}</td>
+            <td>${r.operator}</td>
+            <td>${r.time_type}</td>
+            <td>${r.duration.toFixed(2)}</td>
+            <td>${new Date(r.start_time).toLocaleString()}</td>
+        `;
+        table.appendChild(row);
+
+        labels.push(r.process);
+        durations.push(r.duration);
+    });
+
+    buildChart(labels, durations);
+}
+
+let chart;
+function buildChart(labels, data) {
+    const ctx = document.getElementById('durationChart').getContext('2d');
+    if (chart) chart.destroy();
+
+    chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Cycle Time (seconds)',
+                data: data
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+}
+
+loadSummary();
+loadRecentRuns();
+</script>
+
+</body>
+</html>

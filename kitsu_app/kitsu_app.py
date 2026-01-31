@@ -1,26 +1,14 @@
 from flask import Flask, render_template, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+
+from models.timer_run import db, TimerRun
 
 app = Flask(__name__)
 
-# --- SQLite Config ---
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///timer.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///timer.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# --- Database Model ---
-class TimerRun(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    process = db.Column(db.String(100), nullable=False)
-    machine = db.Column(db.String(100), nullable=False)
-    operator = db.Column(db.String(100), nullable=False)
-    notes = db.Column(db.String(500))
-    time_type = db.Column(db.String(50), nullable=False)
-    start_time = db.Column(db.DateTime, nullable=False)
-    end_time = db.Column(db.DateTime, nullable=False)
-    duration = db.Column(db.Float, nullable=False)
-    laps = db.Column(db.JSON)
+db.init_app(app)
 
 # Create the database tables
 with app.app_context():
@@ -94,42 +82,57 @@ def save():
     return jsonify({"status": "saved", "duration": duration}), 200
 
 
-@app.route("/runs", methods=["GET"])
-def runs():
-    runs = TimerRun.query.order_by(TimerRun.id.desc()).all()
-    return jsonify([{
-        "id": r.id,
-        "process": r.process,
-        "machine": r.machine,
-        "operator": r.operator,
-        "notes": r.notes,
-        "start_time": r.start_time.isoformat(),
-        "end_time": r.end_time.isoformat(),
-        "duration": r.duration
-    } for r in runs])
+### --------------- Views -----------------
+@app.route('/')
+def hello():
+    return render_template('index.html')
     
 @app.route("/view")
 def view_runs():
     runs = TimerRun.query.order_by(TimerRun.id.desc()).all()
     return render_template("view.html", runs=runs)
 
-@app.route("/dashboard/recent")
-def dashboard_recent():
-    runs = (
-        TimerRun.query
-        .order_by(TimerRun.start_time.desc())
-        .limit(10)
-        .all()
-    )
+@app.route("/dashboard")
+def dashboard():
+    return render_template("dashboard.html")
 
-    return jsonify([{
-        "process": r.process,
-        "machine": r.machine,
-        "operator": r.operator,
-        "duration": r.duration,
-        "time_type": r.time_type,
-        "start_time": r.start_time.isoformat()
-    } for r in runs])
+### ------------ API Endpoints for Dashboard -------------
+
+@app.route("/api/dashboard/runs")
+def dashboard_runs():
+    query = TimerRun.query.order_by(TimerRun.start_time.desc()).limit(10)
+
+    # process = request.args.get("process")
+    # machine = request.args.get("machine")
+    # operator = request.args.get("operator")
+
+    # if process:
+    #     query = query.filter(TimerRun.process == process)
+    # if machine:
+    #     query = query.filter(TimerRun.machine == machine)
+    # if operator:
+    #     query = query.filter(TimerRun.operator == operator)
+
+    runs = query.all()
+    return jsonify([r.to_dict() for r in runs])
+
+# @app.route("/dashboard/recent")
+# def dashboard_recent():
+#     runs = (
+#         TimerRun.query
+#         .order_by(TimerRun.start_time.desc())
+#         .limit(10)
+#         .all()
+#     )
+
+#     return jsonify([{
+#         "process": r.process,
+#         "machine": r.machine,
+#         "operator": r.operator,
+#         "duration": r.duration,
+#         "time_type": r.time_type,
+#         "start_time": r.start_time.isoformat()
+#     } for r in runs])
 
 
 @app.route("/dashboard/summary")
@@ -152,14 +155,6 @@ def dashboard_summary():
         "min_duration": min(durations),
         "max_duration": max(durations)
     })
-
-@app.route("/dashboard")
-def dashboard():
-    return render_template("dashboard.html")
-
-@app.route('/')
-def hello():
-    return render_template('index.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

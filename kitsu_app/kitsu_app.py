@@ -102,6 +102,8 @@ def dashboard():
 def dashboard_runs():
     query = TimerRun.query.order_by(TimerRun.start_time.desc()).limit(10)
 
+    #### Filtering logic can be added here
+
     # process = request.args.get("process")
     # machine = request.args.get("machine")
     # operator = request.args.get("operator")

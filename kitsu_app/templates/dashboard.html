@@ -50,7 +50,7 @@
 <body>
 
 <h1>Cycle Time Dashboard</h1>
-<p>Last 10 recorded runs</p>
+<!-- <p>Last 10 recorded runs</p> -->
 
 <div class="summary">
     <div class="card">
@@ -58,15 +58,19 @@
         <div id="totalRuns">—</div>
     </div>
     <div class="card">
-        <h3>Avg Duration (s)</h3>
+        <h3>Avg Cycle Time (s)</h3>
         <div id="avgDuration">—</div>
     </div>
     <div class="card">
-        <h3>Min Duration (s)</h3>
+        <h3>Median Cycle Time (s)</h3>
+        <div id="medianDuration">—</div>
+    </div>
+    <div class="card">
+        <h3>Min Cycle Time (s)</h3>
         <div id="minDuration">—</div>
     </div>
     <div class="card">
-        <h3>Max Duration (s)</h3>
+        <h3>Max Cycle Time (s)</h3>
         <div id="maxDuration">—</div>
     </div>
 </div>
@@ -94,6 +98,7 @@ async function loadSummary() {
 
     document.getElementById("totalRuns").textContent = summary.total_runs;
     document.getElementById("avgDuration").textContent = summary.avg_duration.toFixed(2);
+    document.getElementById("medianDuration").textContent = summary.median_duration.toFixed(2);
     document.getElementById("minDuration").textContent = summary.min_duration.toFixed(2);
     document.getElementById("maxDuration").textContent = summary.max_duration.toFixed(2);
 }

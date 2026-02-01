@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, jsonify
 from datetime import datetime
 
 from models.timer_run import db, TimerRun
+from metrics.cycle_time import median_cycle_time
+
 
 app = Flask(__name__)
 
@@ -111,31 +113,24 @@ def dashboard_runs():
 
 @app.route("/api/dashboard/summary")
 def dashboard_summary():
-    query = TimerRun.query
 
-    # optional: apply filters if you want
-    # process = request.args.get("process")
-    # machine = request.args.get("machine")
-    # if process:
-    #     query = query.filter_by(process=process)
-    # if machine:
-    #     query = query.filter_by(machine=machine)
-
-    runs = query.all()
-    total_runs = query.count()
+    runs = TimerRun.query.all()
+    total_runs = len(runs)
     durations = [r.duration for r in runs]
 
     if not durations:
         return jsonify({
             "total_runs": 0,
             "avg_duration": 0,
+            "median_duration": 0,
             "min_duration": 0,
             "max_duration": 0
         })
 
     return jsonify({
-        "total_runs": total_runs,                   # <-- added
+        "total_runs": total_runs,
         "avg_duration": sum(durations) / len(durations),
+        "median_duration": median_cycle_time(runs),
         "min_duration": min(durations),
         "max_duration": max(durations)
     })

@@ -6,6 +6,7 @@ ALLOWED_EDGES = {
     "process": {"machine"},
     "machine": {"operator"},
 }
+### redesign graph object to accurately reflect the time cycle process
 
 class ProcessNode:
     def __init__(self, name: str, node_type: str):

@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify
 from datetime import datetime
 
 from models.timer_run import db, TimerRun
-from metrics.cycle_time import median_cycle_time
+from metrics.cycle_time import median_cycle_time, std_cycle_time, coefficient_of_variation
 
 
 app = Flask(__name__)
@@ -123,16 +123,20 @@ def dashboard_summary():
             "total_runs": 0,
             "avg_duration": 0,
             "median_duration": 0,
+            "std_duration": 0,
             "min_duration": 0,
-            "max_duration": 0
+            "max_duration": 0,
+            "coefficient_of_variation": 0
         })
 
     return jsonify({
         "total_runs": total_runs,
         "avg_duration": sum(durations) / len(durations),
         "median_duration": median_cycle_time(runs),
+        "std_duration": std_cycle_time(runs),
         "min_duration": min(durations),
-        "max_duration": max(durations)
+        "max_duration": max(durations),
+        "coefficient_of_variation": coefficient_of_variation(runs)
     })
 
 

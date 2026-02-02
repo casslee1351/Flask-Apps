@@ -1,23 +1,44 @@
 from typing import Iterable, Optional
-from statistics import median
+from statistics import median, mean, stdev
 
 
-def median_cycle_time(runs: Iterable) -> Optional[float]:
-    """
-    Compute median cycle time from a collection of TimerRun objects.
-
-    Args:
-        runs: iterable of objects with a .duration attribute (seconds)
-
-    Returns:
-        Median cycle time in seconds, or None if no valid runs.
-    """
-    durations = [
+def _durations(runs: Iterable) -> list[float]:
+    """Extract valid durations from runs."""
+    return [
         r.duration for r in runs
         if r.duration is not None
     ]
 
+
+def median_cycle_time(runs: Iterable) -> Optional[float]:
+    durations = _durations(runs)
     if not durations:
         return None
-
     return median(durations)
+
+
+def std_cycle_time(runs: Iterable) -> Optional[float]:
+    """
+    Sample standard deviation of cycle time.
+    Requires at least 2 runs.
+    """
+    durations = _durations(runs)
+    if len(durations) < 2:
+        return None
+    return stdev(durations)
+
+
+def coefficient_of_variation(runs: Iterable) -> Optional[float]:
+    """
+    CV = std / mean
+    Returns None if undefined.
+    """
+    durations = _durations(runs)
+    if len(durations) < 2:
+        return None
+
+    avg = mean(durations)
+    if avg == 0:
+        return None
+
+    return stdev(durations) / avg

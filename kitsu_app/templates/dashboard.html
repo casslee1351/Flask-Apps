@@ -92,7 +92,7 @@
     </div>
 </div>
 
-<div style="display:flex; gap:15px; margin-bottom:20px;">
+<!-- <div style="display:flex; gap:15px; margin-bottom:20px;">
     <select id="processFilter">
         <option value="">All Processes</option>
     </select>
@@ -104,7 +104,30 @@
     <select id="machineFilter">
         <option value="">All Machines</option>
     </select>
+</div> -->
+<div style="display:flex; gap:20px; margin-bottom:20px;">
+    <div style="display:flex; flex-direction:column;">
+        <label for="processFilter">Process</label>
+        <select id="processFilter">
+            <option value="">All Processes</option>
+        </select>
+    </div>
+
+    <div style="display:flex; flex-direction:column;">
+        <label for="operatorFilter">Operator</label>
+        <select id="operatorFilter">
+            <option value="">All Operators</option>
+        </select>
+    </div>
+
+    <div style="display:flex; flex-direction:column;">
+        <label for="machineFilter">Machine</label>
+        <select id="machineFilter">
+            <option value="">All Machines</option>
+        </select>
+    </div>
 </div>
+
 
 <table>
     <thead>
@@ -225,6 +248,12 @@ function buildChart(labels, data) {
             }
         }
     });
+}
+
+async function loadAggregates() {
+    const params = new URLSearchParams(getActiveFilters());
+    const res = await fetch(`/api/dashboard/aggregates?${params}`);
+    return await res.json();
 }
 
 function reloadDashboard() {

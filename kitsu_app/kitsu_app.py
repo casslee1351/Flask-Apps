@@ -105,9 +105,20 @@ def dashboard():
 
 @app.route("/api/dashboard/runs")
 def dashboard_runs():
-    query = TimerRun.query.order_by(TimerRun.start_time.desc()).limit(10)
+    query = TimerRun.query
 
-    runs = query.all()
+    process = request.args.get("process")
+    machine = request.args.get("machine")
+    operator = request.args.get("operator")
+
+    if process:
+        query = query.filter_by(process=process)
+    if machine:
+        query = query.filter_by(machine=machine)
+    if operator:
+        query = query.filter_by(operator=operator)
+
+    runs = query.order_by(TimerRun.start_time.desc()).limit(10).all()
     return jsonify([r.to_dict() for r in runs])
 
 
@@ -117,6 +128,17 @@ def dashboard_summary():
     runs = TimerRun.query.all()
     total_runs = len(runs)
     durations = [r.duration for r in runs]
+
+    process = request.args.get("process")
+    machine = request.args.get("machine")
+    operator = request.args.get("operator")
+
+    if process:
+        query = query.filter_by(process=process)
+    if machine:
+        query = query.filter_by(machine=machine)
+    if operator:
+        query = query.filter_by(operator=operator)
 
     if not durations:
         return jsonify({
@@ -137,6 +159,18 @@ def dashboard_summary():
         "min_duration": min(durations),
         "max_duration": max(durations),
         "coefficient_of_variation": coefficient_of_variation(runs)
+    })
+
+@app.route("/api/dashboard/filters")
+def dashboard_filters():
+    processes = [r[0] for r in db.session.query(TimerRun.process).distinct().all()]
+    machines  = [r[0] for r in db.session.query(TimerRun.machine).distinct().all()]
+    operators = [r[0] for r in db.session.query(TimerRun.operator).distinct().all()]
+
+    return jsonify({
+        "processes": processes,
+        "machines": machines,
+        "operators": operators
     })
 
 

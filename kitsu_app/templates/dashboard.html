@@ -47,6 +47,13 @@
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
+        select {
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            background: white;
+        }
+
     </style>
 </head>
 <body>
@@ -85,6 +92,20 @@
     </div>
 </div>
 
+<div style="display:flex; gap:15px; margin-bottom:20px;">
+    <select id="processFilter">
+        <option value="">All Processes</option>
+    </select>
+
+    <select id="operatorFilter">
+        <option value="">All Operators</option>
+    </select>
+
+    <select id="machineFilter">
+        <option value="">All Machines</option>
+    </select>
+</div>
+
 <table>
     <thead>
         <tr>
@@ -102,8 +123,42 @@
 <canvas id="durationChart" height="120"></canvas>
 
 <script>
+function getActiveFilters() {
+    return {
+        process: document.getElementById("processFilter").value,
+        machine: document.getElementById("machineFilter").value,
+        operator: document.getElementById("operatorFilter").value
+    };
+}
+
+async function loadFilters() {
+    const res = await fetch("/api/dashboard/filters");
+    const data = await res.json();
+
+    const processSelect = document.getElementById("processFilter");
+    const machineSelect = document.getElementById("machineFilter");
+    const operatorSelect = document.getElementById("operatorFilter");
+
+    // Helper to populate
+    function populate(select, items) {
+        select.innerHTML = `<option value="">All</option>`;
+        items.forEach(item => {
+            const opt = document.createElement("option");
+            opt.value = item;
+            opt.textContent = item;
+            select.appendChild(opt);
+        });
+    }
+
+    populate(processSelect, data.processes);
+    populate(machineSelect, data.machines);
+    populate(operatorSelect, data.operators);
+}
+
+
 async function loadSummary() {
-    const res = await fetch("/api/dashboard/summary");
+    const params = new URLSearchParams(getActiveFilters());
+    const res = await fetch(`/api/dashboard/summary?${params}`);
     const summary = await res.json();
 
     document.getElementById("totalRuns").textContent = summary.total_runs;
@@ -112,11 +167,14 @@ async function loadSummary() {
     document.getElementById("stdDuration").textContent = summary.std_duration.toFixed(2);
     document.getElementById("minDuration").textContent = summary.min_duration.toFixed(2);
     document.getElementById("maxDuration").textContent = summary.max_duration.toFixed(2);
-    document.getElementById("coefficientOfVariation").textContent = summary.coefficient_of_variation.toFixed(2);
+    document.getElementById("coefficientOfVariation").textContent =
+        summary.coefficient_of_variation.toFixed(2);
 }
 
+
 async function loadRecentRuns() {
-    const res = await fetch('/api/dashboard/runs');
+    const params = new URLSearchParams(getActiveFilters());
+    const res = await fetch(`/api/dashboard/runs?${params}`);
     const runs = await res.json();
 
     const table = document.getElementById('runsTable');
@@ -139,6 +197,8 @@ async function loadRecentRuns() {
 
         labels.push(r.process);
         durations.push(r.duration);
+
+        
     });
 
     buildChart(labels, durations);
@@ -167,8 +227,21 @@ function buildChart(labels, data) {
     });
 }
 
+function reloadDashboard() {
+    loadSummary();
+    loadRecentRuns();
+}
+
+loadFilters();
 loadSummary();
 loadRecentRuns();
+
+["processFilter", "machineFilter", "operatorFilter"].forEach(id => {
+    document
+        .getElementById(id)
+        .addEventListener("change", reloadDashboard);
+});
+
 </script>
 
 </body>

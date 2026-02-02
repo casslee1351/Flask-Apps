@@ -59,7 +59,9 @@
 <body>
 
 <h1>Cycle Time Dashboard</h1>
-<!-- <p>Last 10 recorded runs</p> -->
+<p id="dashboardSubtitle" style="color:#666; margin-bottom:20px;">
+    Showing results for: All Processes · All Machines · All Operators
+</p>
 
 <div class="summary">
     <div class="card">
@@ -146,6 +148,15 @@
 <canvas id="durationChart" height="120"></canvas>
 
 <script>
+function updateSubtitle() {
+    const process = document.getElementById("processFilter").value || "All Processes";
+    const machine = document.getElementById("machineFilter").value || "All Machines";
+    const operator = document.getElementById("operatorFilter").value || "All Operators";
+
+    document.getElementById("dashboardSubtitle").textContent =
+        `Showing results for: ${process} · ${machine} · ${operator}`;
+}
+
 function getActiveFilters() {
     return {
         process: document.getElementById("processFilter").value,
@@ -259,11 +270,13 @@ async function loadAggregates() {
 function reloadDashboard() {
     loadSummary();
     loadRecentRuns();
+    updateSubtitle();
 }
 
 loadFilters();
 loadSummary();
 loadRecentRuns();
+updateSubtitle();
 
 ["processFilter", "machineFilter", "operatorFilter"].forEach(id => {
     document

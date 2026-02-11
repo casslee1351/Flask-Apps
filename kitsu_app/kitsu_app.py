@@ -3,6 +3,7 @@ from datetime import datetime
 
 from models.timer_run import db, TimerRun
 from metrics.cycle_time import median_cycle_time, std_cycle_time, coefficient_of_variation
+from models.metrics import aggregate_cycle_times
 
 
 app = Flask(__name__)
@@ -105,17 +106,78 @@ def dashboard():
 
 @app.route("/api/dashboard/runs")
 def dashboard_runs():
-    query = TimerRun.query.order_by(TimerRun.start_time.desc()).limit(10)
+    query = TimerRun.query
 
-    runs = query.all()
+    process = request.args.get("process")
+    machine = request.args.get("machine")
+    operator = request.args.get("operator")
+
+    if process:
+        query = query.filter_by(process=process)
+    if machine:
+        query = query.filter_by(machine=machine)
+    if operator:
+        query = query.filter_by(operator=operator)
+
+    runs = query.order_by(TimerRun.start_time.desc()).limit(10).all()
     return jsonify([r.to_dict() for r in runs])
 
 
+# @app.route("/api/dashboard/summary")
+# def dashboard_summary():
+
+#     runs = TimerRun.query.all()
+#     total_runs = len(runs)
+#     durations = [r.duration for r in runs]
+
+#     process = request.args.get("process")
+#     machine = request.args.get("machine")
+#     operator = request.args.get("operator")
+
+#     if process:
+#         query = query.filter_by(process=process)
+#     if machine:
+#         query = query.filter_by(machine=machine)
+#     if operator:
+#         query = query.filter_by(operator=operator)
+
+#     if not durations:
+#         return jsonify({
+#             "total_runs": 0,
+#             "avg_duration": 0,
+#             "median_duration": 0,
+#             "std_duration": 0,
+#             "min_duration": 0,
+#             "max_duration": 0,
+#             "coefficient_of_variation": 0
+#         })
+
+#     return jsonify({
+#         "total_runs": total_runs,
+#         "avg_duration": sum(durations) / len(durations),
+#         "median_duration": median_cycle_time(runs),
+#         "std_duration": std_cycle_time(runs),
+#         "min_duration": min(durations),
+#         "max_duration": max(durations),
+#         "coefficient_of_variation": coefficient_of_variation(runs)
+#     })
+
 @app.route("/api/dashboard/summary")
 def dashboard_summary():
+    query = TimerRun.query
 
-    runs = TimerRun.query.all()
-    total_runs = len(runs)
+    process = request.args.get("process")
+    machine = request.args.get("machine")
+    operator = request.args.get("operator")
+
+    if process:
+        query = query.filter(TimerRun.process == process)
+    if machine:
+        query = query.filter(TimerRun.machine == machine)
+    if operator:
+        query = query.filter(TimerRun.operator == operator)
+
+    runs = query.all()
     durations = [r.duration for r in runs]
 
     if not durations:
@@ -131,16 +193,63 @@ def dashboard_summary():
         })
         
 
+    avg = sum(durations) / len(durations)
+    variance = sum((d - avg) ** 2 for d in durations) / len(durations)
+    std = variance ** 0.5
+
+    sorted_durations = sorted(durations)
+    mid = len(sorted_durations) // 2
+    median = (
+        sorted_durations[mid]
+        if len(sorted_durations) % 2
+        else (sorted_durations[mid - 1] + sorted_durations[mid]) / 2
+    )
+
     return jsonify({
-        "total_runs": total_runs,
-        "avg_duration": sum(durations) / len(durations),
-        "median_duration": median_cycle_time(runs),
-        "std_duration": std_cycle_time(runs),
+        "total_runs": len(durations),
+        "avg_duration": avg,
+        "median_duration": median,
+        "std_duration": std,
         "min_duration": min(durations),
         "max_duration": max(durations),
-        "coefficient_of_variation": coefficient_of_variation(runs)
+        "coefficient_of_variation": std / avg if avg else 0
     })
 
+
+@app.route("/api/dashboard/filters")
+def dashboard_filters():
+    processes = [r[0] for r in db.session.query(TimerRun.process).distinct().all()]
+    machines  = [r[0] for r in db.session.query(TimerRun.machine).distinct().all()]
+    operators = [r[0] for r in db.session.query(TimerRun.operator).distinct().all()]
+
+    return jsonify({
+        "processes": processes,
+        "machines": machines,
+        "operators": operators
+    })
+
+@app.route("/api/dashboard/aggregates")
+def dashboard_aggregates():
+    process = request.args.get("process")
+    machine = request.args.get("machine")
+    operator = request.args.get("operator")
+
+    query = TimerRun.query
+
+    if process:
+        query = query.filter_by(process=process)
+    if machine:
+        query = query.filter_by(machine=machine)
+    if operator:
+        query = query.filter_by(operator=operator)
+
+    runs = query.all()
+
+    return jsonify({
+        "by_process": aggregate_cycle_times(runs, "process"),
+        "by_machine": aggregate_cycle_times(runs, "machine"),
+        "by_operator": aggregate_cycle_times(runs, "operator")
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -83,6 +83,11 @@
         <h3>Coefficient of Variation</h3>
         <div id="coefficientOfVariation">—</div>
     </div>
+    <div class="card">
+    <h3>Stability</h3>
+    <div id="stabilityClass">—</div>
+</div>
+
 </div>
 
 <table>
@@ -113,6 +118,7 @@ async function loadSummary() {
     document.getElementById("minDuration").textContent = summary.min_duration.toFixed(2);
     document.getElementById("maxDuration").textContent = summary.max_duration.toFixed(2);
     document.getElementById("coefficientOfVariation").textContent = summary.coefficient_of_variation.toFixed(2);
+    document.getElementById("stabilityClass").textContent = summary.stability_class;
 }
 
 async function loadRecentRuns() {

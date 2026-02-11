@@ -47,12 +47,21 @@
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
+        select {
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            background: white;
+        }
+
     </style>
 </head>
 <body>
 
 <h1>Cycle Time Dashboard</h1>
-<!-- <p>Last 10 recorded runs</p> -->
+<p id="dashboardSubtitle" style="color:#666; margin-bottom:20px;">
+    Showing results for: All Processes · All Machines · All Operators
+</p>
 
 <div class="summary">
     <div class="card">
@@ -83,12 +92,45 @@
         <h3>Coefficient of Variation</h3>
         <div id="coefficientOfVariation">—</div>
     </div>
-    <div class="card">
-    <h3>Stability</h3>
-    <div id="stabilityClass">—</div>
-</div>
 
 </div>
+
+<!-- <div style="display:flex; gap:15px; margin-bottom:20px;">
+    <select id="processFilter">
+        <option value="">All Processes</option>
+    </select>
+
+    <select id="operatorFilter">
+        <option value="">All Operators</option>
+    </select>
+
+    <select id="machineFilter">
+        <option value="">All Machines</option>
+    </select>
+</div> -->
+<div style="display:flex; gap:20px; margin-bottom:20px;">
+    <div style="display:flex; flex-direction:column;">
+        <label for="processFilter">Process</label>
+        <select id="processFilter">
+            <option value="">All Processes</option>
+        </select>
+    </div>
+
+    <div style="display:flex; flex-direction:column;">
+        <label for="operatorFilter">Operator</label>
+        <select id="operatorFilter">
+            <option value="">All Operators</option>
+        </select>
+    </div>
+
+    <div style="display:flex; flex-direction:column;">
+        <label for="machineFilter">Machine</label>
+        <select id="machineFilter">
+            <option value="">All Machines</option>
+        </select>
+    </div>
+</div>
+
 
 <table>
     <thead>
@@ -107,8 +149,51 @@
 <canvas id="durationChart" height="120"></canvas>
 
 <script>
+function updateSubtitle() {
+    const process = document.getElementById("processFilter").value || "All Processes";
+    const machine = document.getElementById("machineFilter").value || "All Machines";
+    const operator = document.getElementById("operatorFilter").value || "All Operators";
+
+    document.getElementById("dashboardSubtitle").textContent =
+        `Showing results for: ${process} · ${machine} · ${operator}`;
+}
+
+function getActiveFilters() {
+    return {
+        process: document.getElementById("processFilter").value,
+        machine: document.getElementById("machineFilter").value,
+        operator: document.getElementById("operatorFilter").value
+    };
+}
+
+async function loadFilters() {
+    const res = await fetch("/api/dashboard/filters");
+    const data = await res.json();
+
+    const processSelect = document.getElementById("processFilter");
+    const machineSelect = document.getElementById("machineFilter");
+    const operatorSelect = document.getElementById("operatorFilter");
+
+    // Helper to populate
+    function populate(select, items) {
+        select.innerHTML = `<option value="">All</option>`;
+        items.forEach(item => {
+            const opt = document.createElement("option");
+            opt.value = item;
+            opt.textContent = item;
+            select.appendChild(opt);
+        });
+    }
+
+    populate(processSelect, data.processes);
+    populate(machineSelect, data.machines);
+    populate(operatorSelect, data.operators);
+}
+
+
 async function loadSummary() {
-    const res = await fetch("/api/dashboard/summary");
+    const params = new URLSearchParams(getActiveFilters());
+    const res = await fetch(`/api/dashboard/summary?${params}`);
     const summary = await res.json();
 
     document.getElementById("totalRuns").textContent = summary.total_runs;
@@ -118,11 +203,12 @@ async function loadSummary() {
     document.getElementById("minDuration").textContent = summary.min_duration.toFixed(2);
     document.getElementById("maxDuration").textContent = summary.max_duration.toFixed(2);
     document.getElementById("coefficientOfVariation").textContent = summary.coefficient_of_variation.toFixed(2);
-    document.getElementById("stabilityClass").textContent = summary.stability_class;
 }
 
+
 async function loadRecentRuns() {
-    const res = await fetch('/api/dashboard/runs');
+    const params = new URLSearchParams(getActiveFilters());
+    const res = await fetch(`/api/dashboard/runs?${params}`);
     const runs = await res.json();
 
     const table = document.getElementById('runsTable');
@@ -145,6 +231,8 @@ async function loadRecentRuns() {
 
         labels.push(r.process);
         durations.push(r.duration);
+
+        
     });
 
     buildChart(labels, durations);
@@ -173,8 +261,29 @@ function buildChart(labels, data) {
     });
 }
 
+async function loadAggregates() {
+    const params = new URLSearchParams(getActiveFilters());
+    const res = await fetch(`/api/dashboard/aggregates?${params}`);
+    return await res.json();
+}
+
+function reloadDashboard() {
+    loadSummary();
+    loadRecentRuns();
+    updateSubtitle();
+}
+
+loadFilters();
 loadSummary();
 loadRecentRuns();
+updateSubtitle();
+
+["processFilter", "machineFilter", "operatorFilter"].forEach(id => {
+    document
+        .getElementById(id)
+        .addEventListener("change", reloadDashboard);
+});
+
 </script>
 
 </body>

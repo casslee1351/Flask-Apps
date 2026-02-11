@@ -3,7 +3,6 @@ from datetime import datetime
 
 from models.timer_run import db, TimerRun
 from metrics.cycle_time import median_cycle_time, std_cycle_time, coefficient_of_variation
-from metrics.variability import stability_class
 
 
 app = Flask(__name__)
@@ -139,8 +138,7 @@ def dashboard_summary():
         "std_duration": std_cycle_time(runs),
         "min_duration": min(durations),
         "max_duration": max(durations),
-        "coefficient_of_variation": coefficient_of_variation(runs),
-        "stability_class": stability_class(coefficient_of_variation(runs))
+        "coefficient_of_variation": coefficient_of_variation(runs)
     })
 
 

@@ -237,7 +237,9 @@ async function loadSummary() {
         stabilityEl.style.color = "green";
     } else if (summary.stability_class === "moderate") {
         stabilityEl.style.color = "orange";
-    } else {
+    } else if (summary.stability_class === "N/A") {
+        stabilityEl.style.color = "grey";
+    }else {
         stabilityEl.style.color = "red";
 }
 

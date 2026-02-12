@@ -15,7 +15,7 @@
         }
         .summary {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(6, 1fr);
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -113,10 +113,16 @@
         <h3>Coefficient of Variation</h3>
         <div id="coefficientOfVariation">—</div>
     </div>
+
     <div class="card">
-    <h3>Stability</h3>
-    <div id="stabilityClass">—</div>
-</div>
+        <h3>Stability</h3>
+        <div id="stabilityClass">—</div>
+    </div>
+
+    <div class="card">
+        <h3>Throughput (Runs/Day)</h3>
+        <div id="throughputMetric">—</div>
+    </div>
 
 </div>
 
@@ -229,6 +235,7 @@ async function loadSummary() {
     document.getElementById("maxDuration").textContent = summary.max_duration.toFixed(2);
     document.getElementById("coefficientOfVariation").textContent = summary.coefficient_of_variation.toFixed(2);
     document.getElementById("stabilityClass").textContent = summary.stability_class;
+    document.getElementById("throughputMetric").textContent = summary.throughput_per_day.toFixed(2);
 
     const stabilityEl = document.getElementById("stabilityClass");
     stabilityEl.textContent = summary.stability_class;

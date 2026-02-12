@@ -31,14 +31,14 @@ def std_cycle_time(runs: Iterable) -> Optional[float]:
 def coefficient_of_variation(runs: Iterable) -> Optional[float]:
     """
     CV = std / mean
-    Returns None if undefined.
+    Returns 0 if undefined.
     """
     durations = _durations(runs)
     if len(durations) < 2:
-        return None
+        return 0
 
     avg = mean(durations)
     if avg == 0:
-        return None
-
+        return 0
+    
     return stdev(durations) / avg

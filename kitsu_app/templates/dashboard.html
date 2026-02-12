@@ -233,9 +233,9 @@ async function loadSummary() {
     const stabilityEl = document.getElementById("stabilityClass");
     stabilityEl.textContent = summary.stability_class;
 
-    if (summary.stability_class === "Stable") {
+    if (summary.stability_class === "stable") {
         stabilityEl.style.color = "green";
-    } else if (summary.stability_class === "Moderate") {
+    } else if (summary.stability_class === "moderate") {
         stabilityEl.style.color = "orange";
     } else {
         stabilityEl.style.color = "red";

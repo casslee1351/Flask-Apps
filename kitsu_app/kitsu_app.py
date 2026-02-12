@@ -6,6 +6,8 @@ from metrics.cycle_time import median_cycle_time, std_cycle_time, coefficient_of
 from metrics.variability import stability_class
 from models.metrics import aggregate_cycle_times
 from metrics.throughput import throughput_per_day
+from metrics.bottleneck import detect_process_bottleneck
+
 
 
 app = Flask(__name__)
@@ -183,6 +185,8 @@ def dashboard_summary():
     durations = [r.duration for r in runs]
     
     throughput = throughput_per_day([r.to_dict() for r in runs])
+    bottleneck = detect_process_bottleneck(runs)
+
 
     if not durations:
         return jsonify({
@@ -194,7 +198,8 @@ def dashboard_summary():
             "max_duration": 0,
             "coefficient_of_variation": 0,
             "stability_class": "N/A",
-            "throughput_per_day": throughput or 0
+            "throughput_per_day": 0,
+            "bottleneck": "None"
         })
         
 
@@ -219,7 +224,8 @@ def dashboard_summary():
         "max_duration": max(durations),
         "coefficient_of_variation": coefficient_of_variation(runs),
         "stability_class": stability_class(coefficient_of_variation(runs)),
-        "throughput_per_day": round(throughput, 2) if throughput else 0
+        "throughput_per_day": round(throughput, 2) if throughput else 0,
+        "bottleneck": bottleneck
     })
 
 

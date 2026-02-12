@@ -124,6 +124,11 @@
         <div id="throughputMetric">—</div>
     </div>
 
+    <div class="card">
+        <h3>Bottleneck Process</h3>
+        <div id="bottleneckProcess">—</div>
+    </div>
+
 </div>
 
 <!-- <div style="display:flex; gap:15px; margin-bottom:20px;">
@@ -248,7 +253,15 @@ async function loadSummary() {
         stabilityEl.style.color = "grey";
     }else {
         stabilityEl.style.color = "red";
-}
+    }
+
+    if (summary.bottleneck) {
+        document.getElementById("bottleneckProcess").textContent =
+            summary.bottleneck.process +
+            " (" + summary.bottleneck.avg_cycle_time.toFixed(2) + " s)";
+    } else {
+        document.getElementById("bottleneckProcess").textContent = "None";
+    }
 
 
 }

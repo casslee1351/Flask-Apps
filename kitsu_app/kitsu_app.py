@@ -17,6 +17,8 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
+from models.graph import ProcessGraph, GraphNode, GraphEdge, ProcessEvent
+
 # Create the database tables
 with app.app_context():
     db.create_all()

@@ -96,6 +96,10 @@ def save():
 @app.route('/')
 def hello():
     return render_template('index.html')
+
+@app.route("/graph-builder")
+def graph_builder():
+    return render_template("graph-builder.html")
     
 @app.route("/view")
 def view_runs():
@@ -265,6 +269,104 @@ def dashboard_aggregates():
         "by_machine": aggregate_cycle_times(runs, "machine"),
         "by_operator": aggregate_cycle_times(runs, "operator")
     })
+
+##############################################################
+################ Graph API Endpoints #########################
+#############################################################
+
+@app.route("/api/graph/list", methods=["GET"])
+def list_graphs():
+    """List all process graphs"""
+    graphs = ProcessGraph.query.filter_by(is_active=True).all()
+    return jsonify([g.to_dict() for g in graphs])
+
+
+@app.route("/api/graph/create", methods=["POST"])
+def create_graph():
+    """Create a new process graph"""
+    data = request.json
+    
+    graph = ProcessGraph(
+        name=data['name'],
+        description=data.get('description', '')
+    )
+    
+    db.session.add(graph)
+    db.session.commit()
+    
+    return jsonify(graph.to_dict()), 201
+
+
+@app.route("/api/graph/<int:graph_id>", methods=["GET"])
+def get_graph(graph_id):
+    """Get full graph definition including nodes and edges"""
+    graph = ProcessGraph.query.get_or_404(graph_id)
+    
+    nodes = [n.to_dict() for n in graph.nodes]
+    edges = [e.to_dict() for e in graph.edges]
+    
+    return jsonify({
+        'graph': graph.to_dict(),
+        'nodes': nodes,
+        'edges': edges
+    })
+
+
+@app.route("/api/graph/<int:graph_id>/node", methods=["POST"])
+def add_node(graph_id):
+    """Add a machine (node) to the graph"""
+    data = request.json
+    
+    node = GraphNode(
+        graph_id=graph_id,
+        machine_name=data['machine_name'],
+        machine_type=data.get('machine_type'),
+        theoretical_capacity=data.get('theoretical_capacity')
+    )
+    
+    db.session.add(node)
+    db.session.commit()
+    
+    return jsonify(node.to_dict()), 201
+
+
+@app.route("/api/graph/node/<int:node_id>", methods=["DELETE"])
+def delete_node(node_id):
+    """Delete a node (and its connected edges)"""
+    node = GraphNode.query.get_or_404(node_id)
+    db.session.delete(node)
+    db.session.commit()
+    
+    return jsonify({'status': 'deleted', 'node_id': node_id})
+
+
+@app.route("/api/graph/<int:graph_id>/edge", methods=["POST"])
+def add_edge(graph_id):
+    """Add a process flow (edge) between two machines"""
+    data = request.json
+    
+    edge = GraphEdge(
+        graph_id=graph_id,
+        source_node_id=data['source_node_id'],
+        target_node_id=data['target_node_id'],
+        process_name=data['process_name'],
+        expected_duration=data.get('expected_duration')
+    )
+    
+    db.session.add(edge)
+    db.session.commit()
+    
+    return jsonify(edge.to_dict()), 201
+
+
+@app.route("/api/graph/edge/<int:edge_id>", methods=["DELETE"])
+def delete_edge(edge_id):
+    """Delete an edge"""
+    edge = GraphEdge.query.get_or_404(edge_id)
+    db.session.delete(edge)
+    db.session.commit()
+    
+    return jsonify({'status': 'deleted', 'edge_id': edge_id})
 
 if __name__ == '__main__':
     app.run(debug=True)

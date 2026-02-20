@@ -28,67 +28,130 @@ current_run = {}
 
 @app.route("/start", methods=["POST"])
 def start():
+    """
+    Start timer - supports both graph mode and legacy mode
+    """
     global current_run
     data = request.json
-
-    current_run = {
-        "process": data["process"],
-        "machine": data["machine"],
-        "operator": data["operator"],
-        "notes": data.get("notes", ""),
-        "time_type": data.get("time_type"),
-        "start_time": datetime.now()
-    }
-
-    return jsonify({"status": "started"}), 200
+    
+    # Check if this is graph mode (has edge_id) or legacy mode
+    if 'edge_id' in data:
+        # GRAPH MODE: User selected a specific edge in the process graph
+        edge_id = data['edge_id']
+        edge = GraphEdge.query.get(edge_id)
+        
+        if not edge:
+            return jsonify({"status": "error", "message": "Edge not found"}), 404
+        
+        current_run = {
+            "mode": "graph",
+            "edge_id": edge.id,
+            "process": edge.process_name,
+            "machine": edge.target_node.machine_name,
+            "operator": data["operator"],
+            "batch_id": data.get("batch_id"),
+            "start_time": datetime.now()
+        }
+    else:
+        # LEGACY MODE: Simple process/machine/operator input
+        current_run = {
+            "mode": "legacy",
+            "process": data["process"],
+            "machine": data["machine"],
+            "operator": data["operator"],
+            "notes": data.get("notes", ""),
+            "time_type": data.get("time_type"),
+            "start_time": datetime.now()
+        }
+    
+    return jsonify({"status": "started", "run": current_run}), 200
 
 @app.route("/stop", methods=["POST"])
 def stop():
+    """
+    Stop timer - works for both modes
+    """
     global current_run
-
     data = request.json
     duration = data.get("duration")
-
+    
     if duration is None:
         return jsonify({"status": "error", "message": "Duration missing"}), 400
-
+    
     current_run["end_time"] = datetime.now()
     current_run["duration"] = duration
-
+    
     return jsonify({"status": "stopped", "duration": duration}), 200
 
 
 @app.route("/save", methods=["POST"])
 def save():
+    """
+    Save timer run - saves as ProcessEvent (graph mode) or TimerRun (legacy mode)
+    """
     global current_run
     data = request.json
-
+    
     # Ensure we have a completed run
     if not current_run.get("start_time") or not current_run.get("end_time"):
         return jsonify({"status": "error", "message": "No completed run to save."}), 400
-
-    # Set laps to empty if not present
-    laps = data.get("laps") or None
-
-    run = TimerRun(
-        process=current_run["process"],
-        machine=current_run["machine"],
-        operator=current_run["operator"],
-        notes=data.get("notes", ""),
-        time_type=current_run.get("time_type"),  # must exist
-        start_time=current_run["start_time"],
-        end_time=current_run["end_time"],
-        duration=(current_run["end_time"] - current_run["start_time"]).total_seconds(),
-        laps=None
-    )
-
-    db.session.add(run)
-    db.session.commit()
-
-    # Clear current_run
-    current_run = {}
-
-    return jsonify({"status": "saved", "duration": run.duration}), 200
+    
+    try:
+        if current_run.get("mode") == "graph":
+            # SAVE AS PROCESS EVENT (new graph-based system)
+            event = ProcessEvent(
+                edge_id=current_run["edge_id"],
+                operator=current_run["operator"],
+                start_time=current_run["start_time"],
+                end_time=current_run["end_time"],
+                duration=current_run["duration"],
+                batch_id=current_run.get("batch_id"),
+                notes=data.get("notes", ""),
+                quality_flag=True  # Could make this user-selectable
+            )
+            db.session.add(event)
+            db.session.commit()
+            
+            return jsonify({
+                "status": "saved",
+                "duration": event.duration,
+                "mode": "graph",
+                "event_id": event.id
+            }), 200
+            
+        else:
+            # SAVE AS TIMER RUN (legacy system - backward compatible)
+            run = TimerRun(
+                process=current_run["process"],
+                machine=current_run["machine"],
+                operator=current_run["operator"],
+                notes=data.get("notes", ""),
+                time_type=current_run.get("time_type"),
+                start_time=current_run["start_time"],
+                end_time=current_run["end_time"],
+                duration=current_run["duration"],
+                laps=None
+            )
+            db.session.add(run)
+            db.session.commit()
+            
+            return jsonify({
+                "status": "saved",
+                "duration": run.duration,
+                "mode": "legacy",
+                "run_id": run.id
+            }), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+    
+    finally:
+        # Clear current_run
+        current_run = {}
 
 
 
@@ -133,44 +196,6 @@ def dashboard_runs():
     return jsonify([r.to_dict() for r in runs])
 
 
-# @app.route("/api/dashboard/summary")
-# def dashboard_summary():
-
-#     runs = TimerRun.query.all()
-#     total_runs = len(runs)
-#     durations = [r.duration for r in runs]
-
-#     process = request.args.get("process")
-#     machine = request.args.get("machine")
-#     operator = request.args.get("operator")
-
-#     if process:
-#         query = query.filter_by(process=process)
-#     if machine:
-#         query = query.filter_by(machine=machine)
-#     if operator:
-#         query = query.filter_by(operator=operator)
-
-#     if not durations:
-#         return jsonify({
-#             "total_runs": 0,
-#             "avg_duration": 0,
-#             "median_duration": 0,
-#             "std_duration": 0,
-#             "min_duration": 0,
-#             "max_duration": 0,
-#             "coefficient_of_variation": 0
-#         })
-
-#     return jsonify({
-#         "total_runs": total_runs,
-#         "avg_duration": sum(durations) / len(durations),
-#         "median_duration": median_cycle_time(runs),
-#         "std_duration": std_cycle_time(runs),
-#         "min_duration": min(durations),
-#         "max_duration": max(durations),
-#         "coefficient_of_variation": coefficient_of_variation(runs)
-#     })
 
 @app.route("/api/dashboard/summary")
 def dashboard_summary():
@@ -367,6 +392,21 @@ def delete_edge(edge_id):
     db.session.commit()
     
     return jsonify({'status': 'deleted', 'edge_id': edge_id})
+
+@app.route("/api/events/recent", methods=["GET"])
+def recent_events():
+    """Get recent process events for monitoring"""
+    graph_id = request.args.get('graph_id', type=int)
+    limit = request.args.get('limit', 20, type=int)
+    
+    query = ProcessEvent.query.join(ProcessEvent.edge)
+    
+    if graph_id:
+        query = query.filter(GraphEdge.graph_id == graph_id)
+    
+    events = query.order_by(ProcessEvent.start_time.desc()).limit(limit).all()
+    
+    return jsonify([e.to_dict() for e in events])
 
 if __name__ == '__main__':
     app.run(debug=True)

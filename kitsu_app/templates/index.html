@@ -1,107 +1,595 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Cycle Timer</title>
-        <link rel="stylesheet" href="static/styles.css" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process Timer - Kitsu</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+        
+        .mode-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: #f0f0f0;
+            padding: 5px;
+            border-radius: 10px;
+        }
+        
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .mode-btn.active {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            color: #667eea;
+        }
+        
+        .mode-section {
+            display: none;
+        }
+        
+        .mode-section.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .process-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .process-info.active {
+            display: block;
+        }
+        
+        .process-info h3 {
+            color: #667eea;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+        
+        .process-info p {
+            color: #666;
+            font-size: 0.95em;
+            margin: 5px 0;
+        }
+        
+        .timer-display {
+            text-align: center;
+            font-size: 4em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 30px 0;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-start {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-stop {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            display: none;
+        }
+        
+        .btn-stop:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+        
+        .btn-save {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: none;
+        }
+        
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .status-message {
+            text-align: center;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .status-message.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-message.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .nav-links {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .nav-links a {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+        
+        .nav-links a:hover {
+            background: #f3f4f6;
+        }
+        
+        .helper-text {
+            font-size: 0.85em;
+            color: #999;
+            margin-top: 5px;
+        }
+    </style>
 </head>
-
 <body>
-    <div class="app-shell">
-        <div class="app-container">
-
-            <!-- Header -->
-            <div class="header">
-                <h1>Cycle Timer</h1>
+    <div class="container">
+        <h1>⏱️ Process Timer</h1>
+        
+        <!-- Mode Toggle -->
+        <div class="mode-toggle">
+            <button class="mode-btn active" onclick="switchMode('graph')">📊 Graph Mode</button>
+            <button class="mode-btn" onclick="switchMode('legacy')">📝 Simple Mode</button>
+        </div>
+        
+        <!-- Graph Mode -->
+        <div id="graphMode" class="mode-section active">
+            <div class="form-group">
+                <label>Select Process Graph</label>
+                <select id="graphSelect" onchange="loadGraphEdges()">
+                    <option value="">Loading...</option>
+                </select>
+                <div class="helper-text">Choose the production line or process</div>
             </div>
-
-            <!-- Metadata -->
-            <section class="metadata">
-                <div class="field">
-                    <label for="process-type">Process</label>
-                    <select id="process-type" class="field-control field-select" required>
-                        <option value="">Select a process</option>
-                        <option value="Process A">Process A</option>
-                        <option value="Process B">Process B</option>
-                        <option value="Process C">Process C</option>
-                    </select>
-                </div>
-
-                <div class="field">
-                    <label for="machine-type">Machine</label>
-                    <select id="machine-type" class="field-control field-select">
-                        <option value="">Select a machine</option>
-                        <option value="Machine A">Machine A</option>
-                        <option value="Machine B">Machine B</option>
-                        <option value="Machine C">Machine C</option>
-                    </select>
-                </div>
-                <div class="field">
-                    <label for="operator-type">Operator</label>
-                    <select id="operator-type" class="field-control field-select">
-                        <option value="">Select an operator</option>
-                        <option value="Operator A">Operator A</option>
-                        <option value="Operator B">Operator B</option>
-                        <option value="Operator C">Operator C</option>
-                    </select>
-                </div>
-                <div class="field">
-                    <label for="notes-input">Notes</label>
-                    <input id="notes-input" class="field-control" type="text" placeholder="Optional" />
-                </div>
-                <label>
-                    <input type="radio" name="timeType" value="operator" checked>
-                    Operator Time
-                    </label>
-
-                    <label>
-                    <input type="radio" name="timeType" value="machine">
-                    Machine Time
-                </label>
-            </section>
-
-
-
-            <!-- Timer -->
-            <section class="timer-container">
-                <div class="timer-label">Elapsed Time</div>
-                <div id="timer-display" class="timer-display">
-                        00:00.000
-                </div>
-            </section>
-
-            <!-- Controls -->
-            <section class="controls">
-                <button id="start-button" class="btn primary start-button">Start</button>
-                <button id="stop-button" class="btn danger stop-button" disabled>Stop</button>
-                <button id="lap-button" class="btn secondary lap-button" disabled>Lap</button>
-                <button id="save-button" class="btn save-reset save-button" disabled>Save</button>
-                <button id="reset-button" class="btn save-reset reset-button" disabled>Reset</button>
-            </section>
-
-            <!-- Status -->
-            <section class="status">
-                <span id="status-dot" class="status-dot idle"></span>
-                <span id="status-text">Ready to start</span>
-            </section>
-
-            <ul id="lap-list"></ul>
-
+            
+            <div class="form-group">
+                <label>Select Process Flow</label>
+                <select id="edgeSelect" onchange="updateProcessInfo()">
+                    <option value="">First select a graph above</option>
+                </select>
+                <div class="helper-text">Which machine-to-machine step are you timing?</div>
+            </div>
+            
+            <div id="processInfo" class="process-info">
+                <h3>Process Details:</h3>
+                <p id="processFlow"></p>
+                <p id="processExpected"></p>
+            </div>
+            
+            <div class="form-group">
+                <label>Operator Name</label>
+                <input type="text" id="graphOperator" placeholder="Your name">
+            </div>
+            
+            <div class="form-group">
+                <label>Batch ID (Optional)</label>
+                <input type="text" id="batchId" placeholder="e.g., BATCH-001">
+                <div class="helper-text">Link multiple process steps together</div>
+            </div>
+            
+            <div class="form-group">
+                <label>Notes (Optional)</label>
+                <input type="text" id="graphNotes" placeholder="Any observations?">
+            </div>
+        </div>
+        
+        <!-- Legacy Mode -->
+        <div id="legacyMode" class="mode-section">
+            <div class="form-group">
+                <label>Process</label>
+                <input type="text" id="process" placeholder="e.g., Cutting">
+            </div>
+            
+            <div class="form-group">
+                <label>Machine</label>
+                <input type="text" id="machine" placeholder="e.g., CNC-001">
+            </div>
+            
+            <div class="form-group">
+                <label>Operator</label>
+                <input type="text" id="operator" placeholder="Your name">
+            </div>
+            
+            <div class="form-group">
+                <label>Notes (Optional)</label>
+                <input type="text" id="notes" placeholder="Any observations?">
+            </div>
+        </div>
+        
+        <!-- Timer Display -->
+        <div class="timer-display" id="timerDisplay">00:00:00</div>
+        
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn-start" id="startBtn" onclick="startTimer()">▶️ Start</button>
+            <button class="btn-stop" id="stopBtn" onclick="stopTimer()">⏸️ Stop</button>
+            <button class="btn-save" id="saveBtn" onclick="saveTimer()">💾 Save</button>
+        </div>
+        
+        <!-- Status Message -->
+        <div class="status-message" id="statusMessage"></div>
+        
+        <!-- Navigation -->
+        <div class="nav-links">
+            <a href="/graph-builder">🏗️ Graph Builder</a>
+            <a href="/view">📋 View Runs</a>
+            <a href="/dashboard">📊 Dashboard</a>
         </div>
     </div>
-        <!-- Modal -->
-    <div id="validationModal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn">&times;</span>
-        <h3>Required Fields Missing</h3>
-        <p>Please select Process, Machine, Operator AND Time Type.</p>
-        <button id="modalOkBtn" class="modalOkBtn">OK</button>
-    </div>
-    </div>
-
     
-
-    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script>
+        let timerInterval = null;
+        let startTime = null;
+        let currentMode = 'graph';
+        let selectedEdge = null;
+        let graphs = [];
+        
+        // Load graphs on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            loadGraphs();
+        });
+        
+        // Switch between modes
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            // Update button states
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Show/hide sections
+            document.getElementById('graphMode').classList.toggle('active', mode === 'graph');
+            document.getElementById('legacyMode').classList.toggle('active', mode === 'legacy');
+        }
+        
+        // Load available graphs
+        async function loadGraphs() {
+            try {
+                const response = await fetch('/api/graph/list');
+                graphs = await response.json();
+                
+                const select = document.getElementById('graphSelect');
+                select.innerHTML = '<option value="">Select a graph...</option>';
+                
+                graphs.forEach(graph => {
+                    const option = document.createElement('option');
+                    option.value = graph.id;
+                    option.textContent = `${graph.name} (${graph.node_count} machines)`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading graphs:', error);
+            }
+        }
+        
+        // Load edges for selected graph
+        async function loadGraphEdges() {
+            const graphId = document.getElementById('graphSelect').value;
+            const edgeSelect = document.getElementById('edgeSelect');
+            
+            if (!graphId) {
+                edgeSelect.innerHTML = '<option value="">First select a graph above</option>';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/graph/${graphId}`);
+                const data = await response.json();
+                
+                edgeSelect.innerHTML = '<option value="">Select a process flow...</option>';
+                
+                if (data.edges.length === 0) {
+                    edgeSelect.innerHTML = '<option value="">No connections in this graph yet</option>';
+                    return;
+                }
+                
+                data.edges.forEach(edge => {
+                    const option = document.createElement('option');
+                    option.value = edge.id;
+                    option.textContent = `${edge.process_name} (${edge.source_machine} → ${edge.target_machine})`;
+                    option.dataset.edge = JSON.stringify(edge);
+                    edgeSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading edges:', error);
+            }
+        }
+        
+        // Update process info when edge is selected
+        function updateProcessInfo() {
+            const edgeSelect = document.getElementById('edgeSelect');
+            const selectedOption = edgeSelect.options[edgeSelect.selectedIndex];
+            
+            if (!selectedOption.dataset.edge) {
+                document.getElementById('processInfo').classList.remove('active');
+                return;
+            }
+            
+            selectedEdge = JSON.parse(selectedOption.dataset.edge);
+            
+            document.getElementById('processFlow').textContent = 
+                `Flow: ${selectedEdge.source_machine} → ${selectedEdge.target_machine}`;
+            
+            if (selectedEdge.expected_duration) {
+                document.getElementById('processExpected').textContent = 
+                    `Expected Time: ${selectedEdge.expected_duration} seconds`;
+            } else {
+                document.getElementById('processExpected').textContent = '';
+            }
+            
+            document.getElementById('processInfo').classList.add('active');
+        }
+        
+        // Start timer
+        async function startTimer() {
+            // Validate inputs based on mode
+            if (currentMode === 'graph') {
+                const edgeId = document.getElementById('edgeSelect').value;
+                const operator = document.getElementById('graphOperator').value;
+                
+                if (!edgeId) {
+                    showMessage('Please select a process flow', 'error');
+                    return;
+                }
+                
+                if (!operator) {
+                    showMessage('Please enter operator name', 'error');
+                    return;
+                }
+            } else {
+                const process = document.getElementById('process').value;
+                const machine = document.getElementById('machine').value;
+                const operator = document.getElementById('operator').value;
+                
+                if (!process || !machine || !operator) {
+                    showMessage('Please fill in all required fields', 'error');
+                    return;
+                }
+            }
+            
+            // Start the timer
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimerDisplay, 100);
+            
+            // Update UI
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'block';
+            
+            // Disable form inputs
+            disableInputs(true);
+            
+            // Send start request to server
+            try {
+                let payload;
+                if (currentMode === 'graph') {
+                    payload = {
+                        edge_id: parseInt(document.getElementById('edgeSelect').value),
+                        operator: document.getElementById('graphOperator').value,
+                        batch_id: document.getElementById('batchId').value || null
+                    };
+                } else {
+                    payload = {
+                        process: document.getElementById('process').value,
+                        machine: document.getElementById('machine').value,
+                        operator: document.getElementById('operator').value
+                    };
+                }
+                
+                await fetch('/start', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+            } catch (error) {
+                console.error('Error starting timer:', error);
+            }
+        }
+        
+        // Stop timer
+        async function stopTimer() {
+            clearInterval(timerInterval);
+            
+            const duration = (Date.now() - startTime) / 1000;
+            
+            // Update UI
+            document.getElementById('stopBtn').style.display = 'none';
+            document.getElementById('saveBtn').style.display = 'block';
+            
+            // Send stop request
+            try {
+                await fetch('/stop', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ duration })
+                });
+            } catch (error) {
+                console.error('Error stopping timer:', error);
+            }
+        }
+        
+        // Save timer
+        async function saveTimer() {
+            try {
+                let payload;
+                if (currentMode === 'graph') {
+                    payload = {
+                        notes: document.getElementById('graphNotes').value
+                    };
+                } else {
+                    payload = {
+                        notes: document.getElementById('notes').value
+                    };
+                }
+                
+                const response = await fetch('/save', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'saved') {
+                    showMessage(`✅ Saved! Duration: ${data.duration.toFixed(2)}s`, 'success');
+                    resetTimer();
+                } else {
+                    showMessage('❌ Error saving', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving timer:', error);
+                showMessage('❌ Error saving', 'error');
+            }
+        }
+        
+        // Update timer display
+        function updateTimerDisplay() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const hours = Math.floor(elapsed / 3600);
+            const minutes = Math.floor((elapsed % 3600) / 60);
+            const seconds = elapsed % 60;
+            
+            document.getElementById('timerDisplay').textContent = 
+                `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+        
+        // Reset timer
+        function resetTimer() {
+            document.getElementById('timerDisplay').textContent = '00:00:00';
+            document.getElementById('saveBtn').style.display = 'none';
+            document.getElementById('startBtn').style.display = 'block';
+            
+            // Clear inputs
+            if (currentMode === 'graph') {
+                document.getElementById('graphNotes').value = '';
+                document.getElementById('batchId').value = '';
+            } else {
+                document.getElementById('notes').value = '';
+            }
+            
+            disableInputs(false);
+        }
+        
+        // Disable/enable inputs
+        function disableInputs(disabled) {
+            const inputs = document.querySelectorAll('input, select');
+            inputs.forEach(input => input.disabled = disabled);
+        }
+        
+        // Show status message
+        function showMessage(message, type) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `status-message ${type}`;
+            statusEl.style.display = 'block';
+            
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 3000);
+        }
+    </script>
 </body>
 </html>

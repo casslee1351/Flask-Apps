@@ -7,6 +7,7 @@ from metrics.variability import stability_class
 from models.metrics import aggregate_cycle_times
 from metrics.throughput import throughput_per_day
 from metrics.bottleneck import detect_process_bottleneck
+from analysis.topology import ProcessGraphAnalyzer
 
 
 
@@ -153,8 +154,6 @@ def save():
         # Clear current_run
         current_run = {}
 
-
-
 ### --------------- Views -----------------
 @app.route('/')
 def hello():
@@ -172,6 +171,10 @@ def view_runs():
 @app.route("/dashboard")
 def dashboard():
     return render_template("dashboard.html")
+
+@app.route("/analysis-dashboard")
+def analysis_dashboard():
+    return render_template("analysis-dashboard.html")
 
 # =============================
 # Dashboard API
@@ -407,6 +410,219 @@ def recent_events():
     events = query.order_by(ProcessEvent.start_time.desc()).limit(limit).all()
     
     return jsonify([e.to_dict() for e in events])
+
+@app.route("/api/graph/<int:graph_id>/analyze", methods=["GET"])
+def analyze_graph(graph_id):
+    """
+    Comprehensive bottleneck analysis for a graph
+    
+    Query params:
+        - hours: Time window in hours (default 24)
+        - top_n: Number of bottlenecks to return (default 5)
+    
+    Returns bottleneck scores, critical path, and graph summary
+    """
+    hours = request.args.get('hours', 24, type=int)
+    top_n = request.args.get('top_n', 5, type=int)
+    
+    try:
+        analyzer = ProcessGraphAnalyzer(graph_id, db.session)
+        
+        # Run all analyses
+        bottlenecks = analyzer.detect_bottlenecks(
+            time_window_hours=hours,
+            top_n=top_n
+        )
+        
+        critical_path = analyzer.calculate_critical_path()
+        summary = analyzer.get_graph_summary()
+        
+        return jsonify({
+            'summary': summary,
+            'bottlenecks': bottlenecks,
+            'critical_path': critical_path,
+            'analysis_window_hours': hours,
+            'timestamp': datetime.now().isoformat()
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error analyzing graph'
+        }), 500
+    
+@app.route("/api/graph/node/<int:node_id>/metrics", methods=["GET"])
+def node_metrics(node_id):
+    """
+    Get detailed metrics for a specific machine/node
+    
+    Query params:
+        - hours: Time window in hours (default 24)
+    """
+    hours = request.args.get('hours', 24, type=int)
+    
+    try:
+        node = GraphNode.query.get_or_404(node_id)
+        analyzer = ProcessGraphAnalyzer(node.graph_id, db.session)
+        
+        metrics = analyzer.calculate_node_metrics(node_id, time_window_hours=hours)
+        
+        return jsonify(metrics)
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error calculating node metrics'
+        }), 500
+    
+@app.route("/api/graph/edge/<int:edge_id>/metrics", methods=["GET"])
+def edge_metrics(edge_id):
+    """
+    Get detailed metrics for a specific process flow/edge
+    
+    Query params:
+        - hours: Time window in hours (default 24)
+    """
+    hours = request.args.get('hours', 24, type=int)
+    
+    try:
+        edge = GraphEdge.query.get_or_404(edge_id)
+        analyzer = ProcessGraphAnalyzer(edge.graph_id, db.session)
+        
+        metrics = analyzer.calculate_edge_metrics(edge_id, time_window_hours=hours)
+        
+        return jsonify(metrics)
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error calculating edge metrics'
+        }), 500
+    
+@app.route("/api/graph/<int:graph_id>/events/summary", methods=["GET"])
+def graph_events_summary(graph_id):
+    """
+    Get summary of events for a graph
+    
+    Query params:
+        - hours: Time window in hours (default 24)
+    """
+    from datetime import timedelta
+    
+    hours = request.args.get('hours', 24, type=int)
+    cutoff = datetime.now() - timedelta(hours=hours)
+    
+    try:
+        # Count events by machine
+        from sqlalchemy import func
+        
+        machine_counts = db.session.query(
+            GraphNode.machine_name,
+            func.count(ProcessEvent.id).label('count'),
+            func.avg(ProcessEvent.duration).label('avg_duration'),
+            func.min(ProcessEvent.duration).label('min_duration'),
+            func.max(ProcessEvent.duration).label('max_duration')
+        ).join(
+            GraphEdge, GraphNode.id == GraphEdge.target_node_id
+        ).join(
+            ProcessEvent, GraphEdge.id == ProcessEvent.edge_id
+        ).filter(
+            GraphEdge.graph_id == graph_id,
+            ProcessEvent.start_time >= cutoff
+        ).group_by(
+            GraphNode.machine_name
+        ).all()
+        
+        # Count events by process
+        process_counts = db.session.query(
+            GraphEdge.process_name,
+            func.count(ProcessEvent.id).label('count'),
+            func.avg(ProcessEvent.duration).label('avg_duration')
+        ).join(
+            ProcessEvent, GraphEdge.id == ProcessEvent.edge_id
+        ).filter(
+            GraphEdge.graph_id == graph_id,
+            ProcessEvent.start_time >= cutoff
+        ).group_by(
+            GraphEdge.process_name
+        ).all()
+        
+        return jsonify({
+            'by_machine': [
+                {
+                    'machine': m[0],
+                    'count': m[1],
+                    'avg_duration': round(m[2], 2) if m[2] else 0,
+                    'min_duration': round(m[3], 2) if m[3] else 0,
+                    'max_duration': round(m[4], 2) if m[4] else 0
+                }
+                for m in machine_counts
+            ],
+            'by_process': [
+                {
+                    'process': p[0],
+                    'count': p[1],
+                    'avg_duration': round(p[2], 2) if p[2] else 0
+                }
+                for p in process_counts
+            ],
+            'time_window_hours': hours
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error getting event summary'
+        }), 500
+    
+@app.route("/api/dashboard/graph-summary", methods=["GET"])
+def dashboard_graph_summary():
+    """
+    Enhanced dashboard data including graph analysis
+    Use this instead of or in addition to your existing /api/dashboard/summary
+    """
+    graph_id = request.args.get("graph_id", type=int)
+    hours = request.args.get("hours", 24, type=int)
+    
+    if not graph_id:
+        return jsonify({"error": "graph_id required"}), 400
+    
+    try:
+        analyzer = ProcessGraphAnalyzer(graph_id, db.session)
+        
+        # Get bottlenecks
+        bottlenecks = analyzer.detect_bottlenecks(time_window_hours=hours, top_n=3)
+        
+        # Get graph summary
+        summary = analyzer.get_graph_summary()
+        
+        # Get total events
+        from datetime import timedelta
+        cutoff = datetime.now() - timedelta(hours=hours)
+        
+        total_events = ProcessEvent.query.join(ProcessEvent.edge).filter(
+            GraphEdge.graph_id == graph_id,
+            ProcessEvent.start_time >= cutoff
+        ).count()
+        
+        # Critical path
+        critical_path = analyzer.calculate_critical_path()
+        
+        return jsonify({
+            'graph': summary,
+            'total_events': total_events,
+            'time_window_hours': hours,
+            'top_bottleneck': bottlenecks[0] if bottlenecks else None,
+            'bottlenecks': bottlenecks,
+            'critical_path': critical_path,
+            'timestamp': datetime.now().isoformat()
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error generating dashboard summary'
+        }), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

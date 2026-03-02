@@ -8,6 +8,7 @@ Cassidy Lee
 - what to do with cycle time dashboard, needs to be updated with current data
 - need to add links for graph-view
 - debug graph-view -> font colors
+- view stats need updated with filters
 
 ### TEST
 - test with more complex process

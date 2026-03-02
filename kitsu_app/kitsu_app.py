@@ -25,6 +25,7 @@ from models.graph import ProcessGraph, GraphNode, GraphEdge, ProcessEvent
 with app.app_context():
     db.create_all()
 
+### --------------- Save/Start/Stop Endpoints ----------------- ##########
 # Global variable to store current run
 current_run = {}
 
@@ -61,7 +62,7 @@ def start():
         "operator": data["operator"],
         "batch_id": data.get("batch_id"),
         "start_time": datetime.now(),
-        "laps": []  # Initialize empty laps list
+        "laps": []
     }
     
     return jsonify({"status": "started"}), 200
@@ -75,7 +76,7 @@ def stop():
     global current_run
     data = request.json
     duration = data.get("duration")
-    laps = data.get("laps")  # Optional laps data
+    laps = data.get("laps")
     
     if duration is None:
         return jsonify({
@@ -162,7 +163,7 @@ def save():
         }), 500
     
 
-### --------------- Views -----------------
+### --------------- Views ----------------- ###############
 @app.route('/')
 def hello():
     return render_template('index.html')
@@ -192,9 +193,9 @@ def graph_view():
 def advanced_analytics():
     return render_template("advanced-analytics.html")
 
-# =============================
-# Dashboard API
-# =============================
+
+############### Dashboard API ------------- ################3
+
 
 @app.route("/api/dashboard/runs")
 def dashboard_runs():
@@ -314,9 +315,7 @@ def dashboard_aggregates():
         "by_operator": aggregate_cycle_times(runs, "operator")
     })
 
-##############################################################
 ################ Graph API Endpoints #########################
-#############################################################
 
 @app.route("/api/graph/list", methods=["GET"])
 def list_graphs():
@@ -412,81 +411,6 @@ def delete_edge(edge_id):
     
     return jsonify({'status': 'deleted', 'edge_id': edge_id})
 
-@app.route("/api/events/recent", methods=["GET"])
-def recent_events():
-    """Get recent process events for monitoring"""
-    graph_id = request.args.get('graph_id', type=int)
-    limit = request.args.get('limit', 20, type=int)
-    
-    query = ProcessEvent.query.join(ProcessEvent.edge)
-    
-    if graph_id:
-        query = query.filter(GraphEdge.graph_id == graph_id)
-    
-    events = query.order_by(ProcessEvent.start_time.desc()).limit(limit).all()
-    
-    return jsonify([e.to_dict() for e in events])
-
-# @app.route("/api/events/all", methods=["GET"])
-# def get_all_process_events():
-#     """
-#     Get all ProcessEvent records (graph mode runs only)
-#     """
-#     try:
-#         events = ProcessEvent.query.order_by(ProcessEvent.start_time.desc()).all()
-#         return jsonify([e.to_dict() for e in events])
-    
-#     except Exception as e:
-#         return jsonify({
-#             'error': str(e),
-#             'message': 'Error fetching process events'
-#         }), 500
-
-
-@app.route("/api/events/stats", methods=["GET"])
-def get_events_stats():
-    """
-    Get statistics about all events
-    """
-    try:
-        from sqlalchemy import func
-        
-        # Count events
-        total_count = ProcessEvent.query.count()
-        
-        # Get duration stats
-        stats = db.session.query(
-            func.avg(ProcessEvent.duration).label('avg'),
-            func.min(ProcessEvent.duration).label('min'),
-            func.max(ProcessEvent.duration).label('max')
-        ).first()
-        
-        # Get unique operators
-        unique_operators = db.session.query(
-            func.count(func.distinct(ProcessEvent.operator))
-        ).scalar()
-        
-        # Get unique batches
-        unique_batches = db.session.query(
-            func.count(func.distinct(ProcessEvent.batch_id))
-        ).filter(ProcessEvent.batch_id.isnot(None)).scalar()
-        
-        return jsonify({
-            'total_events': total_count,
-            'unique_operators': unique_operators,
-            'unique_batches': unique_batches or 0,
-            'duration_stats': {
-                'avg': round(stats.avg, 2) if stats.avg else 0,
-                'min': round(stats.min, 2) if stats.min else 0,
-                'max': round(stats.max, 2) if stats.max else 0
-            }
-        })
-    
-    except Exception as e:
-        return jsonify({
-            'error': str(e),
-            'message': 'Error calculating stats'
-        }), 500
 
 @app.route("/api/graph/<int:graph_id>/analyze", methods=["GET"])
 def analyze_graph(graph_id):
@@ -652,6 +576,103 @@ def graph_events_summary(graph_id):
             'message': 'Error getting event summary'
         }), 500
     
+##################### Events API ########################
+@app.route("/api/events/recent", methods=["GET"])
+def recent_events():
+    """Get recent process events for monitoring"""
+    graph_id = request.args.get('graph_id', type=int)
+    limit = request.args.get('limit', 20, type=int)
+    
+    query = ProcessEvent.query.join(ProcessEvent.edge)
+    
+    if graph_id:
+        query = query.filter(GraphEdge.graph_id == graph_id)
+    
+    events = query.order_by(ProcessEvent.start_time.desc()).limit(limit).all()
+    
+    return jsonify([e.to_dict() for e in events])
+
+@app.route("/api/events/stats", methods=["GET"])
+def get_events_stats():
+    """
+    Get statistics about all events
+    """
+    try:
+        from sqlalchemy import func
+        
+        # Count events
+        total_count = ProcessEvent.query.count()
+        
+        # Get duration stats
+        stats = db.session.query(
+            func.avg(ProcessEvent.duration).label('avg'),
+            func.min(ProcessEvent.duration).label('min'),
+            func.max(ProcessEvent.duration).label('max')
+        ).first()
+        
+        # Get unique operators
+        unique_operators = db.session.query(
+            func.count(func.distinct(ProcessEvent.operator))
+        ).scalar()
+        
+        # Get unique batches
+        unique_batches = db.session.query(
+            func.count(func.distinct(ProcessEvent.batch_id))
+        ).filter(ProcessEvent.batch_id.isnot(None)).scalar()
+        
+        return jsonify({
+            'total_events': total_count,
+            'unique_operators': unique_operators,
+            'unique_batches': unique_batches or 0,
+            'duration_stats': {
+                'avg': round(stats.avg, 2) if stats.avg else 0,
+                'min': round(stats.min, 2) if stats.min else 0,
+                'max': round(stats.max, 2) if stats.max else 0
+            }
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error calculating stats'
+        }), 500
+    
+@app.route("/api/events/all", methods=["GET"])
+def get_all_process_events():
+    """
+    Get all ProcessEvent records including lap data
+    """
+    try:
+        events = ProcessEvent.query.order_by(ProcessEvent.start_time.desc()).all()
+        
+        # Enhanced to_dict that includes lap info
+        result = []
+        for event in events:
+            event_dict = event.to_dict()
+            
+            # Add lap summary if laps exist
+            if event.custom_metadata and 'laps' in event.custom_metadata:
+                event_dict['has_laps'] = True
+                event_dict['lap_count'] = event.custom_metadata.get('lap_count', 0)
+                event_dict['fastest_lap'] = event.custom_metadata.get('fastest_lap')
+                event_dict['average_lap'] = event.custom_metadata.get('average_lap')
+            else:
+                event_dict['has_laps'] = False
+                event_dict['lap_count'] = 0
+            
+            result.append(event_dict)
+        
+        return jsonify(result)
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error fetching process events'
+        }), 500
+
+
+################# Dashboard Graph Summary API ########################
+    
 @app.route("/api/dashboard/graph-summary", methods=["GET"])
 def dashboard_graph_summary():
     """
@@ -701,9 +722,7 @@ def dashboard_graph_summary():
             'message': 'Error generating dashboard summary'
         }), 500
 
-# =============================
-# Time-Series Analysis API
-# =============================
+####################### Time-Series Analysis API ##################
 
 @app.route("/api/graph/<int:graph_id>/timeseries", methods=["GET"])
 def graph_timeseries(graph_id):
@@ -771,9 +790,7 @@ def pattern_shifts(graph_id):
         }), 500
 
 
-# =============================
-# What-If Scenario Modeling API
-# =============================
+#################### What-If Scenario Analysis API ####################
 
 @app.route("/api/graph/<int:graph_id>/scenario/baseline", methods=["GET"])
 def scenario_baseline(graph_id):
@@ -881,9 +898,7 @@ def scenario_remove_step(graph_id):
         }), 500
 
 
-# =============================
-# Anomaly Detection API
-# =============================
+######################### Anomaly Detection API ########################
 
 @app.route("/api/graph/<int:graph_id>/anomalies", methods=["GET"])
 def detect_anomalies(graph_id):
@@ -968,9 +983,7 @@ def detect_anomalies(graph_id):
         }), 500
 
 
-# =============================
-# Capacity Planning API
-# =============================
+##################### Capacity Planning API ########################
 
 @app.route("/api/graph/<int:graph_id>/capacity-plan", methods=["POST"])
 def capacity_planning(graph_id):
@@ -1074,40 +1087,8 @@ def capacity_planning(graph_id):
             'error': str(e),
             'message': 'Error generating capacity plan'
         }), 500
-    
-@app.route("/api/events/all", methods=["GET"])
-def get_all_process_events():
-    """
-    Get all ProcessEvent records including lap data
-    """
-    try:
-        events = ProcessEvent.query.order_by(ProcessEvent.start_time.desc()).all()
-        
-        # Enhanced to_dict that includes lap info
-        result = []
-        for event in events:
-            event_dict = event.to_dict()
-            
-            # Add lap summary if laps exist
-            if event.custom_metadata and 'laps' in event.custom_metadata:
-                event_dict['has_laps'] = True
-                event_dict['lap_count'] = event.custom_metadata.get('lap_count', 0)
-                event_dict['fastest_lap'] = event.custom_metadata.get('fastest_lap')
-                event_dict['average_lap'] = event.custom_metadata.get('average_lap')
-            else:
-                event_dict['has_laps'] = False
-                event_dict['lap_count'] = 0
-            
-            result.append(event_dict)
-        
-        return jsonify(result)
-    
-    except Exception as e:
-        return jsonify({
-            'error': str(e),
-            'message': 'Error fetching process events'
-        }), 500
 
+#################### Lap Analysis API ########################
 
 @app.route("/api/events/<int:event_id>/laps", methods=["GET"])
 def get_event_laps(event_id):
@@ -1141,11 +1122,6 @@ def get_event_laps(event_id):
             'error': str(e),
             'message': 'Error fetching lap data'
         }), 500
-
-
-# ============================================================================
-# LAP ANALYSIS ENDPOINTS (Optional - for advanced analytics)
-# ============================================================================
 
 @app.route("/api/graph/<int:graph_id>/lap-analysis", methods=["GET"])
 def analyze_laps(graph_id):

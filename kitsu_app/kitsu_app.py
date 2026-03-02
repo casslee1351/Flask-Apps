@@ -427,20 +427,20 @@ def recent_events():
     
     return jsonify([e.to_dict() for e in events])
 
-@app.route("/api/events/all", methods=["GET"])
-def get_all_process_events():
-    """
-    Get all ProcessEvent records (graph mode runs only)
-    """
-    try:
-        events = ProcessEvent.query.order_by(ProcessEvent.start_time.desc()).all()
-        return jsonify([e.to_dict() for e in events])
+# @app.route("/api/events/all", methods=["GET"])
+# def get_all_process_events():
+#     """
+#     Get all ProcessEvent records (graph mode runs only)
+#     """
+#     try:
+#         events = ProcessEvent.query.order_by(ProcessEvent.start_time.desc()).all()
+#         return jsonify([e.to_dict() for e in events])
     
-    except Exception as e:
-        return jsonify({
-            'error': str(e),
-            'message': 'Error fetching process events'
-        }), 500
+#     except Exception as e:
+#         return jsonify({
+#             'error': str(e),
+#             'message': 'Error fetching process events'
+#         }), 500
 
 
 @app.route("/api/events/stats", methods=["GET"])

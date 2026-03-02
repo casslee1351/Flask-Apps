@@ -493,6 +493,7 @@
                             <th>Operator</th>
                             <th>Duration</th>
                             <th>Started</th>
+                            <th>Laps</th>
                             <th>Batch ID</th>
                             <th>Notes</th>
                         </tr>
@@ -511,11 +512,12 @@
                 
                 html += `
                     <tr>
-                        <td><strong>${event.process_name || '—'}</strong></td>
-                        <td class="flow">${flow}</td>
-                        <td>${event.operator || '—'}</td>
+                        <td><strong>${event.process_name}</strong></td>
+                        <td>${flow}</td>
+                        <td>${event.operator}</td>
                         <td class="duration">${duration}</td>
-                        <td class="timestamp">${startTime}</td>
+                        <td>${startTime}</td>
+                        <td>${event.lap_count || 0} laps</td>  <!-- NEW COLUMN -->
                         <td>${batchId}</td>
                         <td>${notes}</td>
                     </tr>

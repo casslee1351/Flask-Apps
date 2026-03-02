@@ -1,49 +1,594 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Saved Runs</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process Runs - Kitsu Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        label {
+            font-weight: 600;
+            color: #555;
+        }
+        
+        select, input, button {
+            padding: 10px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .table-header {
+            padding: 20px;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .table-header h2 {
+            color: #333;
+        }
+        
+        .table-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-export {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 8px 16px;
+            font-size: 0.9em;
+        }
+        
+        .btn-export:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background: #f9fafb;
+        }
+        
+        th {
+            text-align: left;
+            padding: 15px;
+            font-weight: 600;
+            color: #555;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        tbody tr {
+            border-bottom: 1px solid #e0e0e0;
+            transition: background 0.2s;
+        }
+        
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+        
+        td {
+            padding: 15px;
+            color: #333;
+        }
+        
+        .duration {
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .flow {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        .pagination {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .page-btn {
+            padding: 8px 16px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            color: #333;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        
+        .page-btn:hover:not(:disabled) {
+            border-color: #667eea;
+            color: #667eea;
+        }
+        
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .nav-links a {
+            padding: 10px 20px;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 8px;
+            background: #f0f4ff;
+        }
+        
+        .nav-links a:hover {
+            background: #e0e7ff;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+    </style>
 </head>
 <body>
-    <h1>Saved Timer Runs</h1>
-
-    <table border="1">
-        <tr>
-            <th>ID</th>
-            <th>Process</th>
-            <th>Machine</th>
-            <th>Operator</th>
-            <th>Notes</th>
-            <th>Time Type</th>
-            <th>Start</th>
-            <th>End</th>
-            <th>Total Cycle Time (s)</th>
-            <th>Lap Times</th>
-        </tr>
-
-        {% for run in runs %}
-        <tr>
-            <td>{{ run.id }}</td>
-            <td>{{ run.process }}</td>
-            <td>{{ run.machine }}</td>
-            <td>{{ run.operator }}</td>
-            <td>{{ run.notes }}</td>
-            <td>{{ run.time_type }}</td>
-            <td>{{ run.start_time }}</td>
-            <td>{{ run.end_time }}</td>
-            <td>{{ run.duration }}</td>
-            <td>
-                {% if run.laps %}
-                    <ul>
-                    {% for lap in run.laps %}
-                        <li>Lap {{ lap.lap_number }}: {{ lap.lap_duration | round(2) }}s</li>
-                    {% endfor %}
-                    </ul>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
-
+    <div class="container">
+        <header>
+            <h1>📋 Process Runs History</h1>
+            <p style="color: #666; margin-top: 10px;">Complete history of all timed processes</p>
+            
+            <div class="controls">
+                <div class="filter-group">
+                    <label>Process:</label>
+                    <select id="processFilter" onchange="applyFilters()">
+                        <option value="">All Processes</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Machine:</label>
+                    <select id="machineFilter" onchange="applyFilters()">
+                        <option value="">All Machines</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Operator:</label>
+                    <select id="operatorFilter" onchange="applyFilters()">
+                        <option value="">All Operators</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Batch:</label>
+                    <select id="batchFilter" onchange="applyFilters()">
+                        <option value="">All Batches</option>
+                    </select>
+                </div>
+                
+                <button onclick="clearFilters()">Clear Filters</button>
+                <button onclick="loadEvents()">🔄 Refresh</button>
+            </div>
+            
+            <div class="nav-links">
+                <a href="/">⏱️ Timer</a>
+                <a href="/graph-builder">🏗️ Graph Builder</a>
+                <a href="/graph-view">🗺️ Graph View</a>
+                <a href="/analysis-dashboard">📊 Analytics</a>
+            </div>
+        </header>
+        
+        <!-- Stats -->
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <div class="stat-label">Total Runs</div>
+                <div class="stat-value" id="totalEvents">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Unique Operators</div>
+                <div class="stat-value" id="uniqueOperators">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Unique Batches</div>
+                <div class="stat-value" id="uniqueBatches">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg Duration</div>
+                <div class="stat-value" id="avgDuration">0s</div>
+            </div>
+        </div>
+        
+        <!-- Table -->
+        <div class="table-container">
+            <div class="table-header">
+                <h2>Run History</h2>
+                <div class="table-actions">
+                    <button class="btn-export" onclick="exportToCSV()">📥 Export CSV</button>
+                </div>
+            </div>
+            
+            <div id="tableContent">
+                <div class="loading">Loading runs...</div>
+            </div>
+            
+            <div class="pagination" id="pagination" style="display: none;">
+                <button class="page-btn" onclick="previousPage()" id="prevBtn">← Previous</button>
+                <span id="pageInfo" style="margin: 0 15px; color: #666;">Page 1</span>
+                <button class="page-btn" onclick="nextPage()" id="nextBtn">Next →</button>
+            </div>
+        </div>
+    </div>
     
+    <script>
+        let allEvents = [];
+        let filteredEvents = [];
+        let currentPage = 1;
+        const itemsPerPage = 50;
+        
+        window.addEventListener('DOMContentLoaded', function() {
+            loadEvents();
+            loadStats();
+        });
+        
+        async function loadEvents() {
+            try {
+                const response = await fetch('/api/events/all');
+                allEvents = await response.json();
+                
+                // Sort by start time (most recent first)
+                allEvents.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+                
+                // Update filters
+                updateFilters();
+                
+                // Apply filters and display
+                applyFilters();
+                
+            } catch (error) {
+                console.error('Error loading events:', error);
+                document.getElementById('tableContent').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <h2>Error Loading Data</h2>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/events/stats');
+                const stats = await response.json();
+                
+                document.getElementById('totalEvents').textContent = stats.total_events;
+                document.getElementById('uniqueOperators').textContent = stats.unique_operators;
+                document.getElementById('uniqueBatches').textContent = stats.unique_batches;
+                document.getElementById('avgDuration').textContent = stats.duration_stats.avg.toFixed(1) + 's';
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+        
+        function updateFilters() {
+            // Extract unique values
+            const processes = [...new Set(allEvents.map(e => e.process_name).filter(p => p))].sort();
+            const machines = [...new Set(allEvents.map(e => e.target_machine).filter(m => m))].sort();
+            const operators = [...new Set(allEvents.map(e => e.operator).filter(o => o))].sort();
+            const batches = [...new Set(allEvents.map(e => e.batch_id).filter(b => b))].sort();
+            
+            // Update process filter
+            const processFilter = document.getElementById('processFilter');
+            processFilter.innerHTML = '<option value="">All Processes</option>';
+            processes.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p;
+                option.textContent = p;
+                processFilter.appendChild(option);
+            });
+            
+            // Update machine filter
+            const machineFilter = document.getElementById('machineFilter');
+            machineFilter.innerHTML = '<option value="">All Machines</option>';
+            machines.forEach(m => {
+                const option = document.createElement('option');
+                option.value = m;
+                option.textContent = m;
+                machineFilter.appendChild(option);
+            });
+            
+            // Update operator filter
+            const operatorFilter = document.getElementById('operatorFilter');
+            operatorFilter.innerHTML = '<option value="">All Operators</option>';
+            operators.forEach(o => {
+                const option = document.createElement('option');
+                option.value = o;
+                option.textContent = o;
+                operatorFilter.appendChild(option);
+            });
+            
+            // Update batch filter
+            const batchFilter = document.getElementById('batchFilter');
+            batchFilter.innerHTML = '<option value="">All Batches</option>';
+            batches.forEach(b => {
+                const option = document.createElement('option');
+                option.value = b;
+                option.textContent = b;
+                batchFilter.appendChild(option);
+            });
+        }
+        
+        function applyFilters() {
+            const processFilter = document.getElementById('processFilter').value;
+            const machineFilter = document.getElementById('machineFilter').value;
+            const operatorFilter = document.getElementById('operatorFilter').value;
+            const batchFilter = document.getElementById('batchFilter').value;
+            
+            filteredEvents = allEvents.filter(event => {
+                if (processFilter && event.process_name !== processFilter) return false;
+                if (machineFilter && event.target_machine !== machineFilter) return false;
+                if (operatorFilter && event.operator !== operatorFilter) return false;
+                if (batchFilter && event.batch_id !== batchFilter) return false;
+                return true;
+            });
+            
+            currentPage = 1;
+            displayEvents();
+        }
+        
+        function clearFilters() {
+            document.getElementById('processFilter').value = '';
+            document.getElementById('machineFilter').value = '';
+            document.getElementById('operatorFilter').value = '';
+            document.getElementById('batchFilter').value = '';
+            applyFilters();
+        }
+        
+        function displayEvents() {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageEvents = filteredEvents.slice(startIndex, endIndex);
+            
+            if (filteredEvents.length === 0) {
+                document.getElementById('tableContent').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <h2>No Runs Found</h2>
+                        <p>No process runs match your filters, or no runs have been recorded yet.</p>
+                        <button onclick="clearFilters()" style="margin-top: 20px;">Clear Filters</button>
+                    </div>
+                `;
+                document.getElementById('pagination').style.display = 'none';
+                return;
+            }
+            
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Process</th>
+                            <th>Flow</th>
+                            <th>Operator</th>
+                            <th>Duration</th>
+                            <th>Started</th>
+                            <th>Batch ID</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            pageEvents.forEach(event => {
+                const startTime = new Date(event.start_time).toLocaleString();
+                const duration = event.duration ? `${event.duration.toFixed(1)}s` : 'N/A';
+                const batchId = event.batch_id || '—';
+                const notes = event.notes || '—';
+                const flow = event.source_machine && event.target_machine
+                    ? `${event.source_machine} → ${event.target_machine}`
+                    : event.target_machine || '—';
+                
+                html += `
+                    <tr>
+                        <td><strong>${event.process_name || '—'}</strong></td>
+                        <td class="flow">${flow}</td>
+                        <td>${event.operator || '—'}</td>
+                        <td class="duration">${duration}</td>
+                        <td class="timestamp">${startTime}</td>
+                        <td>${batchId}</td>
+                        <td>${notes}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('tableContent').innerHTML = html;
+            
+            // Update pagination
+            updatePagination();
+        }
+        
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
+            
+            if (totalPages <= 1) {
+                document.getElementById('pagination').style.display = 'none';
+                return;
+            }
+            
+            document.getElementById('pagination').style.display = 'flex';
+            document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages} (${filteredEvents.length} runs)`;
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = currentPage === totalPages;
+        }
+        
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                displayEvents();
+            }
+        }
+        
+        function nextPage() {
+            const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                displayEvents();
+            }
+        }
+        
+        function exportToCSV() {
+            // Create CSV content
+            let csv = 'Process,Source Machine,Target Machine,Operator,Duration (s),Start Time,End Time,Batch ID,Notes\n';
+            
+            filteredEvents.forEach(event => {
+                const row = [
+                    event.process_name || '',
+                    event.source_machine || '',
+                    event.target_machine || '',
+                    event.operator || '',
+                    event.duration || '',
+                    event.start_time,
+                    event.end_time || '',
+                    event.batch_id || '',
+                    (event.notes || '').replace(/,/g, ';')
+                ];
+                csv += row.join(',') + '\n';
+            });
+            
+            // Create download link
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `process-runs-${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+    </script>
 </body>
 </html>

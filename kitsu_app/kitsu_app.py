@@ -8,7 +8,8 @@ from models.metrics import aggregate_cycle_times
 from metrics.throughput import throughput_per_day
 from metrics.bottleneck import detect_process_bottleneck
 from analysis.topology import ProcessGraphAnalyzer
-
+from analysis.timeseries import TimeSeriesAnalyzer, get_bottleneck_time_series, get_bottleneck_predictions
+from analysis.scenarios import ScenarioModeler, run_scenario
 
 
 app = Flask(__name__)
@@ -626,6 +627,380 @@ def dashboard_graph_summary():
         return jsonify({
             'error': str(e),
             'message': 'Error generating dashboard summary'
+        }), 500
+
+# =============================
+# Time-Series Analysis API
+# =============================
+
+@app.route("/api/graph/<int:graph_id>/timeseries", methods=["GET"])
+def graph_timeseries(graph_id):
+    """
+    Get bottleneck scores over time
+    
+    Query params:
+        - days: Number of days to analyze (default 7)
+        - interval: Hours per data point (default 4)
+    """
+    days = request.args.get('days', 7, type=int)
+    interval = request.args.get('interval', 4, type=int)
+    
+    try:
+        data = get_bottleneck_time_series(graph_id, db.session, days=days, interval_hours=interval)
+        return jsonify(data)
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error analyzing time series'
+        }), 500
+
+
+@app.route("/api/graph/<int:graph_id>/predictions", methods=["GET"])
+def graph_predictions(graph_id):
+    """
+    Predict future bottlenecks based on trends
+    
+    Query params:
+        - hours: Hours ahead to predict (default 24)
+    """
+    hours = request.args.get('hours', 24, type=int)
+    
+    try:
+        predictions = get_bottleneck_predictions(graph_id, db.session, hours_ahead=hours)
+        return jsonify(predictions)
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error generating predictions'
+        }), 500
+
+
+@app.route("/api/graph/<int:graph_id>/pattern-shifts", methods=["GET"])
+def pattern_shifts(graph_id):
+    """
+    Detect when primary bottleneck shifts between machines
+    
+    Query params:
+        - hours: Time window (default 24)
+    """
+    hours = request.args.get('hours', 24, type=int)
+    
+    try:
+        analyzer = TimeSeriesAnalyzer(graph_id, db.session)
+        shifts = analyzer.detect_pattern_shifts(hours=hours)
+        return jsonify(shifts)
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error detecting pattern shifts'
+        }), 500
+
+
+# =============================
+# What-If Scenario Modeling API
+# =============================
+
+@app.route("/api/graph/<int:graph_id>/scenario/baseline", methods=["GET"])
+def scenario_baseline(graph_id):
+    """
+    Get baseline metrics for scenario comparison
+    
+    Query params:
+        - hours: Time window (default 24)
+    """
+    hours = request.args.get('hours', 24, type=int)
+    
+    try:
+        modeler = ScenarioModeler(graph_id, db.session)
+        baseline = modeler.get_baseline_metrics(hours=hours)
+        return jsonify(baseline)
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error getting baseline'
+        }), 500
+
+
+@app.route("/api/graph/<int:graph_id>/scenario/capacity-increase", methods=["POST"])
+def scenario_capacity_increase(graph_id):
+    """
+    Simulate increasing machine capacity
+    
+    Body: {
+        "node_id": 1,
+        "new_capacity": 100,
+        "hours": 24
+    }
+    """
+    data = request.json
+    
+    try:
+        result = run_scenario(graph_id, db.session, 'capacity_increase', {
+            'node_id': data['node_id'],
+            'new_capacity': data['new_capacity'],
+            'hours': data.get('hours', 24)
+        })
+        return jsonify(result)
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error running capacity increase scenario'
+        }), 500
+
+
+@app.route("/api/graph/<int:graph_id>/scenario/add-machine", methods=["POST"])
+def scenario_add_machine(graph_id):
+    """
+    Simulate adding a new machine
+    
+    Body: {
+        "machine_name": "New CNC",
+        "machine_type": "CNC",
+        "capacity": 80,
+        "hours": 24
+    }
+    """
+    data = request.json
+    
+    try:
+        result = run_scenario(graph_id, db.session, 'add_machine', {
+            'machine_name': data['machine_name'],
+            'machine_type': data['machine_type'],
+            'capacity': data['capacity'],
+            'hours': data.get('hours', 24)
+        })
+        return jsonify(result)
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error running add machine scenario'
+        }), 500
+
+
+@app.route("/api/graph/<int:graph_id>/scenario/remove-step", methods=["POST"])
+def scenario_remove_step(graph_id):
+    """
+    Simulate removing a process step
+    
+    Body: {
+        "edge_id": 1,
+        "hours": 24
+    }
+    """
+    data = request.json
+    
+    try:
+        result = run_scenario(graph_id, db.session, 'remove_step', {
+            'edge_id': data['edge_id'],
+            'hours': data.get('hours', 24)
+        })
+        return jsonify(result)
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error running remove step scenario'
+        }), 500
+
+
+# =============================
+# Anomaly Detection API
+# =============================
+
+@app.route("/api/graph/<int:graph_id>/anomalies", methods=["GET"])
+def detect_anomalies(graph_id):
+    """
+    Detect unusual patterns in process events
+    
+    Query params:
+        - hours: Time window (default 24)
+        - sensitivity: 'low', 'medium', 'high' (default 'medium')
+    """
+    hours = request.args.get('hours', 24, type=int)
+    sensitivity = request.args.get('sensitivity', 'medium')
+    
+    from datetime import timedelta
+    cutoff = datetime.now() - timedelta(hours=hours)
+    
+    try:
+        # Get all events in time window
+        events = ProcessEvent.query.join(ProcessEvent.edge).filter(
+            GraphEdge.graph_id == graph_id,
+            ProcessEvent.start_time >= cutoff
+        ).all()
+        
+        if not events:
+            return jsonify({'anomalies': [], 'message': 'No data available'})
+        
+        # Group by edge
+        from collections import defaultdict
+        import numpy as np
+        
+        edge_events = defaultdict(list)
+        for event in events:
+            if event.duration:
+                edge_events[event.edge_id].append(event.duration)
+        
+        anomalies = []
+        
+        # Set threshold based on sensitivity
+        thresholds = {'low': 3, 'medium': 2.5, 'high': 2}
+        threshold = thresholds.get(sensitivity, 2.5)
+        
+        for edge_id, durations in edge_events.items():
+            if len(durations) < 5:
+                continue
+            
+            mean = np.mean(durations)
+            std = np.std(durations)
+            
+            # Find outliers (values beyond threshold standard deviations)
+            for event in events:
+                if event.edge_id == edge_id and event.duration:
+                    z_score = abs((event.duration - mean) / std) if std > 0 else 0
+                    
+                    if z_score > threshold:
+                        edge = GraphEdge.query.get(edge_id)
+                        anomalies.append({
+                            'event_id': event.id,
+                            'process': edge.process_name if edge else 'Unknown',
+                            'machine': edge.target_node.machine_name if edge and edge.target_node else 'Unknown',
+                            'duration': round(event.duration, 2),
+                            'expected_duration': round(mean, 2),
+                            'deviation': round(z_score, 2),
+                            'timestamp': event.start_time.isoformat(),
+                            'operator': event.operator,
+                            'severity': 'high' if z_score > 3 else 'medium'
+                        })
+        
+        # Sort by severity and deviation
+        anomalies.sort(key=lambda x: x['deviation'], reverse=True)
+        
+        return jsonify({
+            'anomalies': anomalies[:20],  # Top 20
+            'total_anomalies': len(anomalies),
+            'sensitivity': sensitivity,
+            'time_window_hours': hours
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error detecting anomalies'
+        }), 500
+
+
+# =============================
+# Capacity Planning API
+# =============================
+
+@app.route("/api/graph/<int:graph_id>/capacity-plan", methods=["POST"])
+def capacity_planning(graph_id):
+    """
+    Generate capacity planning recommendations
+    
+    Body: {
+        "target_throughput": 100,  // units per day
+        "budget": 50000,            // optional
+        "hours": 24
+    }
+    """
+    data = request.json
+    target_throughput = data.get('target_throughput')
+    budget = data.get('budget')
+    hours = data.get('hours', 24)
+    
+    if not target_throughput:
+        return jsonify({'error': 'target_throughput required'}), 400
+    
+    try:
+        # Get current state
+        modeler = ScenarioModeler(graph_id, db.session)
+        baseline = modeler.get_baseline_metrics(hours=hours)
+        
+        # Find bottlenecks
+        bottlenecks = [b for b in baseline['bottlenecks'] if b['event_count'] > 0]
+        
+        if not bottlenecks:
+            return jsonify({
+                'message': 'No bottleneck data available',
+                'recommendation': 'Collect more data first'
+            })
+        
+        top_bottleneck = bottlenecks[0]
+        
+        # Calculate capacity gap
+        current_throughput = top_bottleneck['actual_throughput'] * 24  # per day
+        gap = target_throughput - current_throughput
+        gap_percent = (gap / current_throughput) * 100 if current_throughput > 0 else 0
+        
+        # Generate recommendations
+        recommendations = []
+        
+        if gap > 0:
+            # Need more capacity
+            if gap_percent > 50:
+                recommendations.append({
+                    'action': 'add_machine',
+                    'description': f'Add parallel machine to {top_bottleneck["machine_name"]}',
+                    'impact': f'Could increase throughput by ~{gap_percent:.0f}%',
+                    'priority': 'high',
+                    'estimated_cost': 'Depends on equipment type'
+                })
+            
+            # Increase capacity of existing machine
+            required_capacity_increase = (target_throughput / current_throughput) * 100
+            recommendations.append({
+                'action': 'increase_capacity',
+                'description': f'Upgrade {top_bottleneck["machine_name"]} capacity by {gap_percent:.0f}%',
+                'impact': f'Would meet target throughput',
+                'priority': 'medium',
+                'estimated_cost': 'Automation or operator training'
+            })
+            
+            # Optimize process
+            recommendations.append({
+                'action': 'optimize_process',
+                'description': 'Reduce cycle time variability',
+                'impact': f'Current CV: {top_bottleneck["cv"]:.3f} - reduce to <0.2',
+                'priority': 'medium',
+                'estimated_cost': 'Low - process improvements'
+            })
+        
+        else:
+            recommendations.append({
+                'action': 'maintain',
+                'description': 'Current capacity exceeds target',
+                'impact': 'No action needed',
+                'priority': 'low'
+            })
+        
+        return jsonify({
+            'current_state': {
+                'throughput_per_day': round(current_throughput, 2),
+                'top_bottleneck': top_bottleneck['machine_name'],
+                'bottleneck_score': top_bottleneck['total_score']
+            },
+            'target': {
+                'throughput_per_day': target_throughput,
+                'gap': round(gap, 2),
+                'gap_percent': round(gap_percent, 1)
+            },
+            'recommendations': recommendations,
+            'budget': budget,
+            'analysis_hours': hours
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error generating capacity plan'
         }), 500
 
 if __name__ == '__main__':

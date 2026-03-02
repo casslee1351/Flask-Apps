@@ -1,3 +1,6 @@
+Cassidy Lee
+3/2/2026
+
 ### DEBUG
 - get note-taking ability per lap. save each note with associated lap.
 - lap drill-down in runs table

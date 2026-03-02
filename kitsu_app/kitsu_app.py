@@ -181,6 +181,10 @@ def analysis_dashboard():
 def graph_view():
     return render_template("graph-view.html")
 
+@app.route("/advanced-analytics")
+def advanced_analytics():
+    return render_template("advanced-analytics.html")
+
 # =============================
 # Dashboard API
 # =============================

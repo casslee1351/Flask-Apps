@@ -31,8 +31,7 @@ current_run = {}
 @app.route("/start", methods=["POST"])
 def start():
     """
-    Start timer - GRAPH MODE ONLY
-    User must select a process edge
+    Start timer - GRAPH MODE with lap support
     """
     global current_run
     data = request.json
@@ -61,7 +60,8 @@ def start():
         "machine": edge.target_node.machine_name,
         "operator": data["operator"],
         "batch_id": data.get("batch_id"),
-        "start_time": datetime.now()
+        "start_time": datetime.now(),
+        "laps": []  # Initialize empty laps list
     }
     
     return jsonify({"status": "started"}), 200
@@ -70,11 +70,12 @@ def start():
 @app.route("/stop", methods=["POST"])
 def stop():
     """
-    Stop timer
+    Stop timer - now accepts optional laps data
     """
     global current_run
     data = request.json
     duration = data.get("duration")
+    laps = data.get("laps")  # Optional laps data
     
     if duration is None:
         return jsonify({
@@ -85,16 +86,21 @@ def stop():
     current_run["end_time"] = datetime.now()
     current_run["duration"] = duration
     
+    # Store laps if provided
+    if laps:
+        current_run["laps"] = laps
+    
     return jsonify({
         "status": "stopped", 
-        "duration": duration
+        "duration": duration,
+        "laps_count": len(laps) if laps else 0
     }), 200
 
 
 @app.route("/save", methods=["POST"])
 def save():
     """
-    Save timer run as ProcessEvent (graph mode only)
+    Save timer run as ProcessEvent with optional lap data
     """
     global current_run
     data = request.json
@@ -107,6 +113,21 @@ def save():
         }), 400
     
     try:
+        # Prepare laps data for storage
+        laps_data = data.get("laps") or current_run.get("laps")
+        
+        # Convert laps to JSON string for storage in custom_metadata
+        metadata = {}
+        if laps_data and len(laps_data) > 0:
+            metadata['laps'] = laps_data
+            metadata['lap_count'] = len(laps_data)
+            
+            # Calculate lap statistics
+            lap_times = [lap['lapTime'] for lap in laps_data]
+            metadata['fastest_lap'] = min(lap_times)
+            metadata['slowest_lap'] = max(lap_times)
+            metadata['average_lap'] = sum(lap_times) / len(lap_times)
+        
         # Create ProcessEvent
         event = ProcessEvent(
             edge_id=current_run["edge_id"],
@@ -116,7 +137,8 @@ def save():
             duration=current_run["duration"],
             batch_id=current_run.get("batch_id"),
             notes=data.get("notes", ""),
-            quality_flag=True
+            quality_flag=True,
+            custom_metadata=metadata if metadata else None
         )
         
         db.session.add(event)
@@ -128,7 +150,8 @@ def save():
         return jsonify({
             "status": "saved",
             "duration": event.duration,
-            "event_id": event.id
+            "event_id": event.id,
+            "laps_count": metadata.get('lap_count', 0) if metadata else 0
         }), 200
     
     except Exception as e:
@@ -1050,6 +1073,158 @@ def capacity_planning(graph_id):
         return jsonify({
             'error': str(e),
             'message': 'Error generating capacity plan'
+        }), 500
+    
+@app.route("/api/events/all", methods=["GET"])
+def get_all_process_events():
+    """
+    Get all ProcessEvent records including lap data
+    """
+    try:
+        events = ProcessEvent.query.order_by(ProcessEvent.start_time.desc()).all()
+        
+        # Enhanced to_dict that includes lap info
+        result = []
+        for event in events:
+            event_dict = event.to_dict()
+            
+            # Add lap summary if laps exist
+            if event.custom_metadata and 'laps' in event.custom_metadata:
+                event_dict['has_laps'] = True
+                event_dict['lap_count'] = event.custom_metadata.get('lap_count', 0)
+                event_dict['fastest_lap'] = event.custom_metadata.get('fastest_lap')
+                event_dict['average_lap'] = event.custom_metadata.get('average_lap')
+            else:
+                event_dict['has_laps'] = False
+                event_dict['lap_count'] = 0
+            
+            result.append(event_dict)
+        
+        return jsonify(result)
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error fetching process events'
+        }), 500
+
+
+@app.route("/api/events/<int:event_id>/laps", methods=["GET"])
+def get_event_laps(event_id):
+    """
+    Get detailed lap data for a specific event
+    """
+    try:
+        event = ProcessEvent.query.get_or_404(event_id)
+        
+        if not event.custom_metadata or 'laps' not in event.custom_metadata:
+            return jsonify({
+                'event_id': event_id,
+                'has_laps': False,
+                'laps': []
+            })
+        
+        return jsonify({
+            'event_id': event_id,
+            'has_laps': True,
+            'lap_count': event.custom_metadata.get('lap_count', 0),
+            'laps': event.custom_metadata['laps'],
+            'statistics': {
+                'fastest': event.custom_metadata.get('fastest_lap'),
+                'slowest': event.custom_metadata.get('slowest_lap'),
+                'average': event.custom_metadata.get('average_lap')
+            }
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error fetching lap data'
+        }), 500
+
+
+# ============================================================================
+# LAP ANALYSIS ENDPOINTS (Optional - for advanced analytics)
+# ============================================================================
+
+@app.route("/api/graph/<int:graph_id>/lap-analysis", methods=["GET"])
+def analyze_laps(graph_id):
+    """
+    Analyze lap consistency across all events in a graph
+    
+    Returns insights about lap time consistency
+    """
+    try:
+        from datetime import timedelta
+        from sqlalchemy import func
+        
+        hours = request.args.get('hours', 24, type=int)
+        cutoff = datetime.now() - timedelta(hours=hours)
+        
+        # Get all events with laps
+        events = ProcessEvent.query.join(ProcessEvent.edge).filter(
+            GraphEdge.graph_id == graph_id,
+            ProcessEvent.start_time >= cutoff,
+            ProcessEvent.custom_metadata.isnot(None)
+        ).all()
+        
+        # Filter to only events with laps
+        events_with_laps = [
+            e for e in events 
+            if e.custom_metadata and 'laps' in e.custom_metadata
+        ]
+        
+        if not events_with_laps:
+            return jsonify({
+                'message': 'No events with laps in time window',
+                'events_analyzed': 0
+            })
+        
+        # Aggregate statistics
+        all_lap_times = []
+        consistent_runs = 0
+        inconsistent_runs = 0
+        
+        for event in events_with_laps:
+            laps = event.custom_metadata['laps']
+            lap_times = [lap['lapTime'] for lap in laps]
+            all_lap_times.extend(lap_times)
+            
+            # Check consistency (CV < 0.15 = consistent)
+            if len(lap_times) > 1:
+                import numpy as np
+                mean = np.mean(lap_times)
+                std = np.std(lap_times)
+                cv = std / mean if mean > 0 else 0
+                
+                if cv < 0.15:
+                    consistent_runs += 1
+                else:
+                    inconsistent_runs += 1
+        
+        import numpy as np
+        
+        return jsonify({
+            'events_analyzed': len(events_with_laps),
+            'total_laps': len(all_lap_times),
+            'consistency': {
+                'consistent_runs': consistent_runs,
+                'inconsistent_runs': inconsistent_runs,
+                'consistency_rate': round(consistent_runs / len(events_with_laps) * 100, 1) if events_with_laps else 0
+            },
+            'lap_time_stats': {
+                'mean': round(float(np.mean(all_lap_times)), 2) if all_lap_times else 0,
+                'std': round(float(np.std(all_lap_times)), 2) if all_lap_times else 0,
+                'min': round(float(np.min(all_lap_times)), 2) if all_lap_times else 0,
+                'max': round(float(np.max(all_lap_times)), 2) if all_lap_times else 0
+            },
+            'time_window_hours': hours
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error analyzing laps'
         }), 500
 
 if __name__ == '__main__':

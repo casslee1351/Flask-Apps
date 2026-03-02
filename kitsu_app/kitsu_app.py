@@ -176,6 +176,10 @@ def dashboard():
 def analysis_dashboard():
     return render_template("analysis-dashboard.html")
 
+@app.route("/graph-view")
+def graph_view():
+    return render_template("graph-view.html")
+
 # =============================
 # Dashboard API
 # =============================

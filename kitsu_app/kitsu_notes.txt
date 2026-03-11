@@ -1,0 +1,23 @@
+Cassidy Lee
+3/2/2026
+
+### DEBUG
+- get note-taking ability per lap. save each note with associated lap.
+- lap drill-down in runs table
+- show milliseconds on timer
+- what to do with cycle time dashboard, needs to be updated with current data
+- need to add links for graph-view
+- debug graph-view -> font colors
+- view stats need updated with filters
+
+### TEST
+- test with more complex process
+- add dropdowns with Operator IDs populated with search functionality
+
+### ADD-ON
+- log-in page and accounts
+
+### RESEARCH AND END USER TESTING
+- research deployment
+- research cybersecurity
+- test with Jonny

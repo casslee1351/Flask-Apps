@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Analytics - Kitsu</title>
+    
+    <!-- Chart.js for time series visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab:hover {
+            color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        select, input, button {
+            padding: 10px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card h2 {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+        
+        .scenario-form {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        
+        .result-card {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+        }
+        
+        .metric-label {
+            color: #666;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .improvement {
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        .degradation {
+            color: #ef4444;
+            font-weight: bold;
+        }
+        
+        .prediction-item {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        
+        .prediction-item.high-risk {
+            background: #fee2e2;
+            border-left-color: #dc2626;
+        }
+        
+        .anomaly-item {
+            background: #fee2e2;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 4px solid #dc2626;
+        }
+        
+        .anomaly-item.medium {
+            background: #fef3c7;
+            border-left-color: #f59e0b;
+        }
+        
+        .recommendation {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .nav-links a {
+            padding: 10px 20px;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 8px;
+            background: #f0f4ff;
+        }
+        
+        .nav-links a:hover {
+            background: #e0e7ff;
+        }
+        
+        canvas {
+            max-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔮 Advanced Analytics</h1>
+            <p style="color: #666; margin-top: 10px;">Predictive analysis, scenario modeling, and optimization</p>
+            
+            <div class="controls">
+                <select id="graphSelect" onchange="loadAll()">
+                    <option value="">Select a graph...</option>
+                </select>
+                <button onclick="loadAll()">🔄 Refresh All</button>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('trends')">📈 Trends & Predictions</button>
+                <button class="tab" onclick="switchTab('scenarios')">🎭 What-If Scenarios</button>
+                <button class="tab" onclick="switchTab('anomalies')">⚠️ Anomaly Detection</button>
+                <button class="tab" onclick="switchTab('capacity')">📊 Capacity Planning</button>
+            </div>
+            
+            <div class="nav-links">
+                <a href="/">⏱️ Timer</a>
+                <a href="/graph-builder">🏗️ Graph Builder</a>
+                <a href="/graph-view">🗺️ Graph View</a>
+                <a href="/analysis-dashboard">📊 Basic Analytics</a>
+            </div>
+        </header>
+        
+        <!-- Tab: Trends & Predictions -->
+        <div id="trendsTab" class="tab-content active">
+            <div class="card">
+                <h2>📈 Bottleneck Trends Over Time</h2>
+                <canvas id="trendChart"></canvas>
+            </div>
+            
+            <div class="card">
+                <h2>🔮 Predicted Bottlenecks</h2>
+                <div id="predictions">
+                    <div class="loading">Loading predictions...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab: What-If Scenarios -->
+        <div id="scenariosTab" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>💪 Increase Machine Capacity</h2>
+                    <div class="scenario-form">
+                        <div class="form-group">
+                            <label>Select Machine</label>
+                            <select id="scenarioNode">
+                                <option value="">Select...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>New Capacity (units/hour)</label>
+                            <input type="number" id="newCapacity" placeholder="e.g., 100">
+                        </div>
+                        <button onclick="runCapacityScenario()">Run Scenario</button>
+                    </div>
+                    <div id="capacityResult"></div>
+                </div>
+                
+                <div class="card">
+                    <h2>➕ Add New Machine</h2>
+                    <div class="scenario-form">
+                        <div class="form-group">
+                            <label>Machine Name</label>
+                            <input type="text" id="newMachineName" placeholder="e.g., CNC-002">
+                        </div>
+                        <div class="form-group">
+                            <label>Machine Type</label>
+                            <input type="text" id="newMachineType" placeholder="e.g., CNC">
+                        </div>
+                        <div class="form-group">
+                            <label>Capacity (units/hour)</label>
+                            <input type="number" id="newMachineCapacity" placeholder="e.g., 80">
+                        </div>
+                        <button onclick="runAddMachineScenario()">Run Scenario</button>
+                    </div>
+                    <div id="addMachineResult"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab: Anomaly Detection -->
+        <div id="anomaliesTab" class="tab-content">
+            <div class="card">
+                <h2>⚠️ Detected Anomalies</h2>
+                <div class="controls">
+                    <select id="anomalySensitivity" onchange="loadAnomalies()">
+                        <option value="low">Low Sensitivity</option>
+                        <option value="medium" selected>Medium Sensitivity</option>
+                        <option value="high">High Sensitivity</option>
+                    </select>
+                    <button onclick="loadAnomalies()">Detect Anomalies</button>
+                </div>
+                <div id="anomaliesList">
+                    <div class="loading">Click "Detect Anomalies" to scan for unusual patterns</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab: Capacity Planning -->
+        <div id="capacityTab" class="tab-content">
+            <div class="card">
+                <h2>📊 Capacity Planning Tool</h2>
+                <div class="scenario-form">
+                    <div class="form-group">
+                        <label>Target Throughput (units/day)</label>
+                        <input type="number" id="targetThroughput" placeholder="e.g., 500">
+                    </div>
+                    <div class="form-group">
+                        <label>Budget (optional)</label>
+                        <input type="number" id="budget" placeholder="e.g., 50000">
+                    </div>
+                    <button onclick="runCapacityPlan()">Generate Plan</button>
+                </div>
+                <div id="capacityPlanResult"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentGraphId = null;
+        let trendChart = null;
+        
+        window.addEventListener('DOMContentLoaded', function() {
+            loadGraphs();
+            initChart();
+        });
+        
+        async function loadGraphs() {
+            const response = await fetch('/api/graph/list');
+            const graphs = await response.json();
+            
+            const select = document.getElementById('graphSelect');
+            select.innerHTML = '<option value="">Select a graph...</option>';
+            
+            graphs.forEach(graph => {
+                const option = document.createElement('option');
+                option.value = graph.id;
+                option.textContent = graph.name;
+                select.appendChild(option);
+            });
+            
+            if (graphs.length > 0) {
+                select.value = graphs[0].id;
+                loadAll();
+            }
+        }
+        
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.add('active');
+        }
+        
+        async function loadAll() {
+            const graphId = document.getElementById('graphSelect').value;
+            if (!graphId) return;
+            
+            currentGraphId = graphId;
+            
+            await Promise.all([
+                loadTrends(),
+                loadPredictions(),
+                loadNodesForScenarios()
+            ]);
+        }
+        
+        function initChart() {
+            const ctx = document.getElementById('trendChart');
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Bottleneck Scores Over Time'
+                        },
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Bottleneck Score'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        async function loadTrends() {
+            if (!currentGraphId) return;
+            
+            try {
+                const response = await fetch(`/api/graph/${currentGraphId}/timeseries?days=7&interval=4`);
+                const data = await response.json();
+                
+                // Update chart
+                const datasets = [];
+                const colors = [
+                    '#dc2626', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', 
+                    '#ec4899', '#14b8a6', '#f97316'
+                ];
+                
+                let colorIndex = 0;
+                for (const [nodeName, nodeData] of Object.entries(data.nodes)) {
+                    if (nodeData.event_counts.some(c => c > 0)) {
+                        datasets.push({
+                            label: nodeName,
+                            data: nodeData.scores,
+                            borderColor: colors[colorIndex % colors.length],
+                            backgroundColor: colors[colorIndex % colors.length] + '20',
+                            tension: 0.4
+                        });
+                        colorIndex++;
+                    }
+                }
+                
+                trendChart.data.labels = data.timestamps.map(t => 
+                    new Date(t).toLocaleDateString() + ' ' + new Date(t).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                );
+                trendChart.data.datasets = datasets;
+                trendChart.update();
+                
+            } catch (error) {
+                console.error('Error loading trends:', error);
+            }
+        }
+        
+        async function loadPredictions() {
+            if (!currentGraphId) return;
+            
+            try {
+                const response = await fetch(`/api/graph/${currentGraphId}/predictions?hours=24`);
+                const data = await response.json();
+                
+                const container = document.getElementById('predictions');
+                
+                if (data.predictions.length === 0) {
+                    container.innerHTML = '<p style="color: #10b981; padding: 20px;">✅ No bottlenecks predicted in the next 24 hours!</p>';
+                } else {
+                    let html = '';
+                    data.predictions.forEach(pred => {
+                        const riskClass = pred.risk_level === 'high' ? 'high-risk' : '';
+                        html += `
+                            <div class="prediction-item ${riskClass}">
+                                <h3 style="margin-bottom: 10px;">${pred.risk_level === 'high' ? '🔴' : '🟡'} ${pred.machine}</h3>
+                                <p><strong>Current Score:</strong> ${pred.current_score.toFixed(1)}/100</p>
+                                <p><strong>Trend:</strong> ${pred.trend}</p>
+                                <p><strong>Risk Level:</strong> ${pred.risk_level}</p>
+                                <p style="margin-top: 10px; color: #666;">${pred.recommendation}</p>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Error loading predictions:', error);
+            }
+        }
+        
+        async function loadNodesForScenarios() {
+            if (!currentGraphId) return;
+            
+            const response = await fetch(`/api/graph/${currentGraphId}`);
+            const data = await response.json();
+            
+            const select = document.getElementById('scenarioNode');
+            select.innerHTML = '<option value="">Select a machine...</option>';
+            
+            data.nodes.forEach(node => {
+                const option = document.createElement('option');
+                option.value = node.id;
+                option.textContent = node.machine_name;
+                option.dataset.capacity = node.theoretical_capacity;
+                select.appendChild(option);
+            });
+        }
+        
+        async function runCapacityScenario() {
+            const nodeId = document.getElementById('scenarioNode').value;
+            const newCapacity = document.getElementById('newCapacity').value;
+            
+            if (!nodeId || !newCapacity) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            const response = await fetch(`/api/graph/${currentGraphId}/scenario/capacity-increase`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    node_id: parseInt(nodeId),
+                    new_capacity: parseFloat(newCapacity)
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.error) {
+                document.getElementById('capacityResult').innerHTML = `<p style="color: #ef4444;">${result.error}</p>`;
+                return;
+            }
+            
+            const improvement = result.impact.total_improvement;
+            const improvementClass = improvement > 0 ? 'improvement' : '';
+            
+            document.getElementById('capacityResult').innerHTML = `
+                <div class="result-card">
+                    <h3>Scenario Results</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">Current Capacity</span>
+                        <span class="metric-value">${result.changes.capacity.original} units/hr</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">New Capacity</span>
+                        <span class="metric-value">${result.changes.capacity.new} units/hr (${result.changes.capacity.change_percent > 0 ? '+' : ''}${result.changes.capacity.change_percent}%)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Current Score</span>
+                        <span class="metric-value">${result.baseline.bottleneck_score.toFixed(1)}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Projected Score</span>
+                        <span class="metric-value ${improvementClass}">${result.projected.bottleneck_score.toFixed(1)} (${improvement > 0 ? '-' : ''}${Math.abs(improvement).toFixed(1)} points)</span>
+                    </div>
+                    <div class="recommendation">
+                        <strong>💡 Recommendation:</strong> ${result.recommendation}
+                    </div>
+                </div>
+            `;
+        }
+        
+        async function runAddMachineScenario() {
+            const name = document.getElementById('newMachineName').value;
+            const type = document.getElementById('newMachineType').value;
+            const capacity = document.getElementById('newMachineCapacity').value;
+            
+            if (!name || !type || !capacity) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            const response = await fetch(`/api/graph/${currentGraphId}/scenario/add-machine`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    machine_name: name,
+                    machine_type: type,
+                    capacity: parseFloat(capacity)
+                })
+            });
+            
+            const result = await response.json();
+            
+            document.getElementById('addMachineResult').innerHTML = `
+                <div class="result-card">
+                    <h3>Scenario Results</h3>
+                    <p><strong>Current Bottleneck:</strong> ${result.baseline.bottleneck}</p>
+                    <p><strong>Current Score:</strong> ${result.baseline.current_score.toFixed(1)}</p>
+                    <hr style="margin: 15px 0; border: none; border-top: 1px solid #e0e0e0;">
+                    <p><strong>Projected Impact:</strong></p>
+                    <p>Score Reduction: ~${result.projected.estimated_score_reduction} points</p>
+                    <p>Throughput Increase: ${result.projected.throughput_increase_potential}</p>
+                    <div class="recommendation">
+                        <strong>💡 Recommendation:</strong> ${result.recommendation}
+                    </div>
+                </div>
+            `;
+        }
+        
+        async function loadAnomalies() {
+            if (!currentGraphId) return;
+            
+            const sensitivity = document.getElementById('anomalySensitivity').value;
+            
+            const response = await fetch(`/api/graph/${currentGraphId}/anomalies?hours=24&sensitivity=${sensitivity}`);
+            const data = await response.json();
+            
+            const container = document.getElementById('anomaliesList');
+            
+            if (data.anomalies.length === 0) {
+                container.innerHTML = '<p style="color: #10b981; padding: 20px;">✅ No anomalies detected!</p>';
+            } else {
+                let html = `<p style="margin-bottom: 15px;"><strong>Found ${data.total_anomalies} anomalies (showing top 20)</strong></p>`;
+                
+                data.anomalies.forEach(anomaly => {
+                    const severityClass = anomaly.severity === 'high' ? '' : 'medium';
+                    html += `
+                        <div class="anomaly-item ${severityClass}">
+                            <h4>${anomaly.severity === 'high' ? '🔴' : '🟡'} ${anomaly.process} - ${anomaly.machine}</h4>
+                            <p><strong>Duration:</strong> ${anomaly.duration}s (expected: ${anomaly.expected_duration}s)</p>
+                            <p><strong>Deviation:</strong> ${anomaly.deviation.toFixed(2)} standard deviations</p>
+                            <p><strong>Operator:</strong> ${anomaly.operator || 'Unknown'}</p>
+                            <p><strong>Time:</strong> ${new Date(anomaly.timestamp).toLocaleString()}</p>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+            }
+        }
+        
+        async function runCapacityPlan() {
+            const target = document.getElementById('targetThroughput').value;
+            const budget = document.getElementById('budget').value;
+            
+            if (!target) {
+                alert('Please enter target throughput');
+                return;
+            }
+            
+            const response = await fetch(`/api/graph/${currentGraphId}/capacity-plan`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    target_throughput: parseFloat(target),
+                    budget: budget ? parseFloat(budget) : null
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.error) {
+                document.getElementById('capacityPlanResult').innerHTML = `<p style="color: #ef4444;">${data.error}</p>`;
+                return;
+            }
+            
+            let html = `
+                <div class="result-card">
+                    <h3>Capacity Analysis</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">Current Throughput</span>
+                        <span class="metric-value">${data.current_state.throughput_per_day.toFixed(1)} units/day</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Target Throughput</span>
+                        <span class="metric-value">${data.target.throughput_per_day} units/day</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Gap</span>
+                        <span class="metric-value ${data.target.gap > 0 ? 'degradation' : 'improvement'}">
+                            ${data.target.gap > 0 ? '+' : ''}${data.target.gap.toFixed(1)} units/day (${data.target.gap_percent.toFixed(1)}%)
+                        </span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Top Bottleneck</span>
+                        <span class="metric-value">${data.current_state.top_bottleneck}</span>
+                    </div>
+                    
+                    <h3 style="margin-top: 20px; margin-bottom: 10px;">Recommendations</h3>
+            `;
+            
+            data.recommendations.forEach((rec, i) => {
+                html += `
+                    <div class="recommendation" style="margin-bottom: 10px;">
+                        <h4>${i + 1}. ${rec.action.replace('_', ' ').toUpperCase()}</h4>
+                        <p>${rec.description}</p>
+                        <p><strong>Impact:</strong> ${rec.impact}</p>
+                        <p><strong>Priority:</strong> ${rec.priority}</p>
+                        <p><strong>Cost:</strong> ${rec.estimated_cost}</p>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+            
+            document.getElementById('capacityPlanResult').innerHTML = html;
+        }
+    </script>
+</body>
+</html>

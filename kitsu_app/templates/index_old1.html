@@ -26,7 +26,7 @@
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             padding: 40px;
-            max-width: 700px;
+            max-width: 600px;
             width: 100%;
         }
         
@@ -35,6 +35,40 @@
             color: #333;
             margin-bottom: 30px;
             font-size: 2em;
+        }
+        
+        .mode-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: #f0f0f0;
+            padding: 5px;
+            border-radius: 10px;
+        }
+        
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .mode-btn.active {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            color: #667eea;
+        }
+        
+        .mode-section {
+            display: none;
+        }
+        
+        .mode-section.active {
+            display: block;
         }
         
         .form-group {
@@ -86,26 +120,18 @@
             margin: 5px 0;
         }
         
-        .timer-section {
-            background: #f9fafb;
-            padding: 20px;
-            border-radius: 12px;
-            margin: 20px 0;
-        }
-        
         .timer-display {
             text-align: center;
             font-size: 4em;
             font-weight: bold;
             color: #667eea;
-            margin: 20px 0;
+            margin: 30px 0;
             font-variant-numeric: tabular-nums;
         }
         
         .controls {
             display: flex;
             gap: 10px;
-            margin-bottom: 15px;
         }
         
         button {
@@ -129,17 +155,6 @@
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
         }
         
-        .btn-lap {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-            display: none;
-        }
-        
-        .btn-lap:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
-        }
-        
         .btn-stop {
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             color: white;
@@ -160,68 +175,6 @@
         .btn-save:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-        
-        .laps-container {
-            display: none;
-            max-height: 300px;
-            overflow-y: auto;
-            margin-top: 20px;
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-        }
-        
-        .laps-container.active {
-            display: block;
-        }
-        
-        .laps-header {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-        
-        .lap-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px;
-            margin: 5px 0;
-            background: #f9fafb;
-            border-radius: 6px;
-            transition: background 0.2s;
-        }
-        
-        .lap-item:hover {
-            background: #f3f4f6;
-        }
-        
-        .lap-number {
-            font-weight: 600;
-            color: #667eea;
-        }
-        
-        .lap-time {
-            font-family: 'Courier New', monospace;
-            color: #666;
-        }
-        
-        .lap-split {
-            font-family: 'Courier New', monospace;
-            color: #999;
-            font-size: 0.9em;
-        }
-        
-        .lap-fastest {
-            background: #d1fae5 !important;
-        }
-        
-        .lap-slowest {
-            background: #fee2e2 !important;
         }
         
         .status-message {
@@ -269,61 +222,22 @@
             color: #999;
             margin-top: 5px;
         }
-        
-        .required {
-            color: #ef4444;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #999;
-        }
-        
-        .empty-state a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 600;
-        }
-        
-        .empty-state a:hover {
-            text-decoration: underline;
-        }
-        
-        .lap-stats {
-            display: flex;
-            gap: 15px;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #e0e0e0;
-        }
-        
-        .lap-stat {
-            flex: 1;
-            text-align: center;
-        }
-        
-        .lap-stat-label {
-            font-size: 0.75em;
-            color: #999;
-            text-transform: uppercase;
-            margin-bottom: 3px;
-        }
-        
-        .lap-stat-value {
-            font-weight: 600;
-            color: #333;
-            font-family: 'Courier New', monospace;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>⏱️ Process Timer</h1>
         
-        <div id="formSection">
+        <!-- Mode Toggle -->
+        <div class="mode-toggle">
+            <button class="mode-btn active" onclick="switchMode('graph')">📊 Graph Mode</button>
+            <button class="mode-btn" onclick="switchMode('legacy')">📝 Simple Mode</button>
+        </div>
+        
+        <!-- Graph Mode -->
+        <div id="graphMode" class="mode-section active">
             <div class="form-group">
-                <label>Select Process Graph <span class="required">*</span></label>
+                <label>Select Process Graph</label>
                 <select id="graphSelect" onchange="loadGraphEdges()">
                     <option value="">Loading...</option>
                 </select>
@@ -331,7 +245,7 @@
             </div>
             
             <div class="form-group">
-                <label>Select Process Flow <span class="required">*</span></label>
+                <label>Select Process Flow</label>
                 <select id="edgeSelect" onchange="updateProcessInfo()">
                     <option value="">First select a graph above</option>
                 </select>
@@ -345,8 +259,8 @@
             </div>
             
             <div class="form-group">
-                <label>Operator Name <span class="required">*</span></label>
-                <input type="text" id="operator" placeholder="Your name">
+                <label>Operator Name</label>
+                <input type="text" id="graphOperator" placeholder="Your name">
             </div>
             
             <div class="form-group">
@@ -357,57 +271,41 @@
             
             <div class="form-group">
                 <label>Notes (Optional)</label>
+                <input type="text" id="graphNotes" placeholder="Any observations?">
+            </div>
+        </div>
+        
+        <!-- Legacy Mode -->
+        <div id="legacyMode" class="mode-section">
+            <div class="form-group">
+                <label>Process</label>
+                <input type="text" id="process" placeholder="e.g., Cutting">
+            </div>
+            
+            <div class="form-group">
+                <label>Machine</label>
+                <input type="text" id="machine" placeholder="e.g., CNC-001">
+            </div>
+            
+            <div class="form-group">
+                <label>Operator</label>
+                <input type="text" id="operator" placeholder="Your name">
+            </div>
+            
+            <div class="form-group">
+                <label>Notes (Optional)</label>
                 <input type="text" id="notes" placeholder="Any observations?">
             </div>
         </div>
         
-        <div id="emptyState" class="empty-state" style="display: none;">
-            <h2>No Process Graphs Available</h2>
-            <p>You need to create a process graph first.</p>
-            <p style="margin-top: 15px;">
-                <a href="/graph-builder">Go to Graph Builder →</a>
-            </p>
-        </div>
+        <!-- Timer Display -->
+        <div class="timer-display" id="timerDisplay">00:00:00</div>
         
-        <!-- Timer Section -->
-        <div class="timer-section">
-            <div class="timer-display" id="timerDisplay">00:00:00</div>
-            
-            <!-- Controls -->
-            <div class="controls">
-                <button class="btn-start" id="startBtn" onclick="startTimer()">▶️ Start</button>
-                <button class="btn-lap" id="lapBtn" onclick="recordLap()">🏁 Lap</button>
-                <button class="btn-stop" id="stopBtn" onclick="stopTimer()">⏸️ Stop</button>
-            </div>
-            
-            <div class="controls">
-                <button class="btn-save" id="saveBtn" onclick="saveTimer()">💾 Save Run</button>
-            </div>
-            
-            <!-- Laps Display -->
-            <div class="laps-container" id="lapsContainer">
-                <div class="laps-header">
-                    <span>Lap</span>
-                    <span>Time</span>
-                    <span>Split</span>
-                </div>
-                <div id="lapsList"></div>
-                
-                <div class="lap-stats" id="lapStats" style="display: none;">
-                    <div class="lap-stat">
-                        <div class="lap-stat-label">Fastest</div>
-                        <div class="lap-stat-value" id="fastestLap">—</div>
-                    </div>
-                    <div class="lap-stat">
-                        <div class="lap-stat-label">Slowest</div>
-                        <div class="lap-stat-value" id="slowestLap">—</div>
-                    </div>
-                    <div class="lap-stat">
-                        <div class="lap-stat-label">Average</div>
-                        <div class="lap-stat-value" id="avgLap">—</div>
-                    </div>
-                </div>
-            </div>
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn-start" id="startBtn" onclick="startTimer()">▶️ Start</button>
+            <button class="btn-stop" id="stopBtn" onclick="stopTimer()">⏸️ Stop</button>
+            <button class="btn-save" id="saveBtn" onclick="saveTimer()">💾 Save</button>
         </div>
         
         <!-- Status Message -->
@@ -417,37 +315,44 @@
         <div class="nav-links">
             <a href="/graph-builder">🏗️ Graph Builder</a>
             <a href="/view">📋 View Runs</a>
-            <a href="/analysis-dashboard">📊 Analytics</a>
+            <a href="/dashboard">📊 Dashboard</a>
         </div>
     </div>
     
     <script>
         let timerInterval = null;
         let startTime = null;
-        let lastLapTime = null;
+        let currentMode = 'graph';
         let selectedEdge = null;
         let graphs = [];
-        let laps = [];
         
         // Load graphs on page load
         window.addEventListener('DOMContentLoaded', function() {
             loadGraphs();
         });
         
+        // Switch between modes
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            // Update button states
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Show/hide sections
+            document.getElementById('graphMode').classList.toggle('active', mode === 'graph');
+            document.getElementById('legacyMode').classList.toggle('active', mode === 'legacy');
+        }
+        
+        // Load available graphs
         async function loadGraphs() {
             try {
                 const response = await fetch('/api/graph/list');
                 graphs = await response.json();
                 
                 const select = document.getElementById('graphSelect');
-                
-                if (graphs.length === 0) {
-                    document.getElementById('formSection').style.display = 'none';
-                    document.getElementById('emptyState').style.display = 'block';
-                    document.getElementById('startBtn').disabled = true;
-                    return;
-                }
-                
                 select.innerHTML = '<option value="">Select a graph...</option>';
                 
                 graphs.forEach(graph => {
@@ -458,10 +363,10 @@
                 });
             } catch (error) {
                 console.error('Error loading graphs:', error);
-                showMessage('Error loading graphs. Please refresh the page.', 'error');
             }
         }
         
+        // Load edges for selected graph
         async function loadGraphEdges() {
             const graphId = document.getElementById('graphSelect').value;
             const edgeSelect = document.getElementById('edgeSelect');
@@ -479,7 +384,6 @@
                 
                 if (data.edges.length === 0) {
                     edgeSelect.innerHTML = '<option value="">No connections in this graph yet</option>';
-                    showMessage('This graph has no process flows. Please add connections in the Graph Builder.', 'error');
                     return;
                 }
                 
@@ -492,10 +396,10 @@
                 });
             } catch (error) {
                 console.error('Error loading edges:', error);
-                showMessage('Error loading process flows.', 'error');
             }
         }
         
+        // Update process info when edge is selected
         function updateProcessInfo() {
             const edgeSelect = document.getElementById('edgeSelect');
             const selectedOption = edgeSelect.options[edgeSelect.selectedIndex];
@@ -520,135 +424,78 @@
             document.getElementById('processInfo').classList.add('active');
         }
         
+        // Start timer
         async function startTimer() {
-            // Validate inputs
-            const edgeId = document.getElementById('edgeSelect').value;
-            const operator = document.getElementById('operator').value.trim();
-            
-            if (!edgeId) {
-                showMessage('Please select a process flow', 'error');
-                return;
+            // Validate inputs based on mode
+            if (currentMode === 'graph') {
+                const edgeId = document.getElementById('edgeSelect').value;
+                const operator = document.getElementById('graphOperator').value;
+                
+                if (!edgeId) {
+                    showMessage('Please select a process flow', 'error');
+                    return;
+                }
+                
+                if (!operator) {
+                    showMessage('Please enter operator name', 'error');
+                    return;
+                }
+            } else {
+                const process = document.getElementById('process').value;
+                const machine = document.getElementById('machine').value;
+                const operator = document.getElementById('operator').value;
+                
+                if (!process || !machine || !operator) {
+                    showMessage('Please fill in all required fields', 'error');
+                    return;
+                }
             }
-            
-            if (!operator) {
-                showMessage('Please enter operator name', 'error');
-                return;
-            }
-            
-            // Reset laps
-            laps = [];
-            updateLapsDisplay();
             
             // Start the timer
             startTime = Date.now();
-            lastLapTime = startTime;
             timerInterval = setInterval(updateTimerDisplay, 100);
             
             // Update UI
             document.getElementById('startBtn').style.display = 'none';
-            document.getElementById('lapBtn').style.display = 'block';
             document.getElementById('stopBtn').style.display = 'block';
-            document.getElementById('lapsContainer').classList.add('active');
             
             // Disable form inputs
             disableInputs(true);
             
             // Send start request to server
             try {
-                const batchId = document.getElementById('batchId').value.trim();
+                let payload;
+                if (currentMode === 'graph') {
+                    payload = {
+                        edge_id: parseInt(document.getElementById('edgeSelect').value),
+                        operator: document.getElementById('graphOperator').value,
+                        batch_id: document.getElementById('batchId').value || null
+                    };
+                } else {
+                    payload = {
+                        process: document.getElementById('process').value,
+                        machine: document.getElementById('machine').value,
+                        operator: document.getElementById('operator').value
+                    };
+                }
                 
                 await fetch('/start', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        edge_id: parseInt(edgeId),
-                        operator: operator,
-                        batch_id: batchId || null
-                    })
+                    body: JSON.stringify(payload)
                 });
             } catch (error) {
                 console.error('Error starting timer:', error);
             }
         }
         
-        function recordLap() {
-            const currentTime = Date.now();
-            const totalElapsed = (currentTime - startTime) / 1000;
-            const lapTime = (currentTime - lastLapTime) / 1000;
-            
-            laps.push({
-                number: laps.length + 1,
-                totalTime: totalElapsed,
-                lapTime: lapTime,
-                timestamp: currentTime
-            });
-            
-            lastLapTime = currentTime;
-            updateLapsDisplay();
-            
-            // Visual feedback
-            const lapBtn = document.getElementById('lapBtn');
-            lapBtn.textContent = '✓ Lap Recorded';
-            setTimeout(() => {
-                lapBtn.textContent = '🏁 Lap';
-            }, 500);
-        }
-        
-        function updateLapsDisplay() {
-            const lapsList = document.getElementById('lapsList');
-            
-            if (laps.length === 0) {
-                lapsList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">No laps recorded yet</div>';
-                document.getElementById('lapStats').style.display = 'none';
-                return;
-            }
-            
-            // Find fastest and slowest laps
-            const lapTimes = laps.map(l => l.lapTime);
-            const fastest = Math.min(...lapTimes);
-            const slowest = Math.max(...lapTimes);
-            const average = lapTimes.reduce((a, b) => a + b, 0) / lapTimes.length;
-            
-            // Update lap list
-            let html = '';
-            laps.forEach((lap, index) => {
-                const isFastest = lap.lapTime === fastest && laps.length > 1;
-                const isSlowest = lap.lapTime === slowest && laps.length > 1;
-                const className = isFastest ? 'lap-fastest' : (isSlowest ? 'lap-slowest' : '');
-                
-                html += `
-                    <div class="lap-item ${className}">
-                        <span class="lap-number">Lap ${lap.number}</span>
-                        <span class="lap-time">${formatTime(lap.totalTime)}</span>
-                        <span class="lap-split">+${formatTime(lap.lapTime)}</span>
-                    </div>
-                `;
-            });
-            
-            lapsList.innerHTML = html;
-            
-            // Update stats
-            if (laps.length > 1) {
-                document.getElementById('lapStats').style.display = 'flex';
-                document.getElementById('fastestLap').textContent = formatTime(fastest);
-                document.getElementById('slowestLap').textContent = formatTime(slowest);
-                document.getElementById('avgLap').textContent = formatTime(average);
-            }
-        }
-        
-        function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = (seconds % 60).toFixed(1);
-            return mins > 0 ? `${mins}:${secs.padStart(4, '0')}` : `${secs}s`;
-        }
-        
+        // Stop timer
         async function stopTimer() {
             clearInterval(timerInterval);
             
             const duration = (Date.now() - startTime) / 1000;
             
             // Update UI
-            document.getElementById('lapBtn').style.display = 'none';
             document.getElementById('stopBtn').style.display = 'none';
             document.getElementById('saveBtn').style.display = 'block';
             
@@ -657,34 +504,37 @@
                 await fetch('/stop', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ 
-                        duration,
-                        laps: laps.length > 0 ? laps : null
-                    })
+                    body: JSON.stringify({ duration })
                 });
             } catch (error) {
                 console.error('Error stopping timer:', error);
             }
         }
         
+        // Save timer
         async function saveTimer() {
             try {
-                const notes = document.getElementById('notes').value.trim();
+                let payload;
+                if (currentMode === 'graph') {
+                    payload = {
+                        notes: document.getElementById('graphNotes').value
+                    };
+                } else {
+                    payload = {
+                        notes: document.getElementById('notes').value
+                    };
+                }
                 
                 const response = await fetch('/save', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ 
-                        notes: notes || '',
-                        laps: laps.length > 0 ? laps : null
-                    })
+                    body: JSON.stringify(payload)
                 });
                 
                 const data = await response.json();
                 
                 if (data.status === 'saved') {
-                    const lapInfo = laps.length > 0 ? ` (${laps.length} laps)` : '';
-                    showMessage(`✅ Saved! Duration: ${data.duration.toFixed(2)}s${lapInfo}`, 'success');
+                    showMessage(`✅ Saved! Duration: ${data.duration.toFixed(2)}s`, 'success');
                     resetTimer();
                 } else {
                     showMessage('❌ Error saving', 'error');
@@ -695,6 +545,7 @@
             }
         }
         
+        // Update timer display
         function updateTimerDisplay() {
             const elapsed = Math.floor((Date.now() - startTime) / 1000);
             const hours = Math.floor(elapsed / 3600);
@@ -705,30 +556,30 @@
                 `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         }
         
+        // Reset timer
         function resetTimer() {
             document.getElementById('timerDisplay').textContent = '00:00:00';
             document.getElementById('saveBtn').style.display = 'none';
             document.getElementById('startBtn').style.display = 'block';
-            document.getElementById('lapsContainer').classList.remove('active');
             
-            // Clear notes
-            document.getElementById('notes').value = '';
-            
-            // Reset laps
-            laps = [];
-            updateLapsDisplay();
+            // Clear inputs
+            if (currentMode === 'graph') {
+                document.getElementById('graphNotes').value = '';
+                document.getElementById('batchId').value = '';
+            } else {
+                document.getElementById('notes').value = '';
+            }
             
             disableInputs(false);
         }
         
+        // Disable/enable inputs
         function disableInputs(disabled) {
-            document.getElementById('graphSelect').disabled = disabled;
-            document.getElementById('edgeSelect').disabled = disabled;
-            document.getElementById('operator').disabled = disabled;
-            document.getElementById('batchId').disabled = disabled;
-            document.getElementById('notes').disabled = disabled;
+            const inputs = document.querySelectorAll('input, select');
+            inputs.forEach(input => input.disabled = disabled);
         }
         
+        // Show status message
         function showMessage(message, type) {
             const statusEl = document.getElementById('statusMessage');
             statusEl.textContent = message;

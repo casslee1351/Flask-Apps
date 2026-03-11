@@ -26,7 +26,7 @@
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             padding: 40px;
-            max-width: 700px;
+            max-width: 600px;
             width: 100%;
         }
         
@@ -86,26 +86,18 @@
             margin: 5px 0;
         }
         
-        .timer-section {
-            background: #f9fafb;
-            padding: 20px;
-            border-radius: 12px;
-            margin: 20px 0;
-        }
-        
         .timer-display {
             text-align: center;
             font-size: 4em;
             font-weight: bold;
             color: #667eea;
-            margin: 20px 0;
+            margin: 30px 0;
             font-variant-numeric: tabular-nums;
         }
         
         .controls {
             display: flex;
             gap: 10px;
-            margin-bottom: 15px;
         }
         
         button {
@@ -129,17 +121,6 @@
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
         }
         
-        .btn-lap {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-            display: none;
-        }
-        
-        .btn-lap:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
-        }
-        
         .btn-stop {
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             color: white;
@@ -160,68 +141,6 @@
         .btn-save:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-        
-        .laps-container {
-            display: none;
-            max-height: 300px;
-            overflow-y: auto;
-            margin-top: 20px;
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-        }
-        
-        .laps-container.active {
-            display: block;
-        }
-        
-        .laps-header {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-        
-        .lap-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px;
-            margin: 5px 0;
-            background: #f9fafb;
-            border-radius: 6px;
-            transition: background 0.2s;
-        }
-        
-        .lap-item:hover {
-            background: #f3f4f6;
-        }
-        
-        .lap-number {
-            font-weight: 600;
-            color: #667eea;
-        }
-        
-        .lap-time {
-            font-family: 'Courier New', monospace;
-            color: #666;
-        }
-        
-        .lap-split {
-            font-family: 'Courier New', monospace;
-            color: #999;
-            font-size: 0.9em;
-        }
-        
-        .lap-fastest {
-            background: #d1fae5 !important;
-        }
-        
-        .lap-slowest {
-            background: #fee2e2 !important;
         }
         
         .status-message {
@@ -289,32 +208,6 @@
         .empty-state a:hover {
             text-decoration: underline;
         }
-        
-        .lap-stats {
-            display: flex;
-            gap: 15px;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #e0e0e0;
-        }
-        
-        .lap-stat {
-            flex: 1;
-            text-align: center;
-        }
-        
-        .lap-stat-label {
-            font-size: 0.75em;
-            color: #999;
-            text-transform: uppercase;
-            margin-bottom: 3px;
-        }
-        
-        .lap-stat-value {
-            font-weight: 600;
-            color: #333;
-            font-family: 'Courier New', monospace;
-        }
     </style>
 </head>
 <body>
@@ -369,45 +262,14 @@
             </p>
         </div>
         
-        <!-- Timer Section -->
-        <div class="timer-section">
-            <div class="timer-display" id="timerDisplay">00:00:00</div>
-            
-            <!-- Controls -->
-            <div class="controls">
-                <button class="btn-start" id="startBtn" onclick="startTimer()">▶️ Start</button>
-                <button class="btn-lap" id="lapBtn" onclick="recordLap()">🏁 Lap</button>
-                <button class="btn-stop" id="stopBtn" onclick="stopTimer()">⏸️ Stop</button>
-            </div>
-            
-            <div class="controls">
-                <button class="btn-save" id="saveBtn" onclick="saveTimer()">💾 Save Run</button>
-            </div>
-            
-            <!-- Laps Display -->
-            <div class="laps-container" id="lapsContainer">
-                <div class="laps-header">
-                    <span>Lap</span>
-                    <span>Time</span>
-                    <span>Split</span>
-                </div>
-                <div id="lapsList"></div>
-                
-                <div class="lap-stats" id="lapStats" style="display: none;">
-                    <div class="lap-stat">
-                        <div class="lap-stat-label">Fastest</div>
-                        <div class="lap-stat-value" id="fastestLap">—</div>
-                    </div>
-                    <div class="lap-stat">
-                        <div class="lap-stat-label">Slowest</div>
-                        <div class="lap-stat-value" id="slowestLap">—</div>
-                    </div>
-                    <div class="lap-stat">
-                        <div class="lap-stat-label">Average</div>
-                        <div class="lap-stat-value" id="avgLap">—</div>
-                    </div>
-                </div>
-            </div>
+        <!-- Timer Display -->
+        <div class="timer-display" id="timerDisplay">00:00:00</div>
+        
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn-start" id="startBtn" onclick="startTimer()">▶️ Start</button>
+            <button class="btn-stop" id="stopBtn" onclick="stopTimer()">⏸️ Stop</button>
+            <button class="btn-save" id="saveBtn" onclick="saveTimer()">💾 Save</button>
         </div>
         
         <!-- Status Message -->
@@ -424,16 +286,15 @@
     <script>
         let timerInterval = null;
         let startTime = null;
-        let lastLapTime = null;
         let selectedEdge = null;
         let graphs = [];
-        let laps = [];
         
         // Load graphs on page load
         window.addEventListener('DOMContentLoaded', function() {
             loadGraphs();
         });
         
+        // Load available graphs
         async function loadGraphs() {
             try {
                 const response = await fetch('/api/graph/list');
@@ -442,6 +303,7 @@
                 const select = document.getElementById('graphSelect');
                 
                 if (graphs.length === 0) {
+                    // No graphs available
                     document.getElementById('formSection').style.display = 'none';
                     document.getElementById('emptyState').style.display = 'block';
                     document.getElementById('startBtn').disabled = true;
@@ -462,6 +324,7 @@
             }
         }
         
+        // Load edges for selected graph
         async function loadGraphEdges() {
             const graphId = document.getElementById('graphSelect').value;
             const edgeSelect = document.getElementById('edgeSelect');
@@ -496,6 +359,7 @@
             }
         }
         
+        // Update process info when edge is selected
         function updateProcessInfo() {
             const edgeSelect = document.getElementById('edgeSelect');
             const selectedOption = edgeSelect.options[edgeSelect.selectedIndex];
@@ -520,6 +384,7 @@
             document.getElementById('processInfo').classList.add('active');
         }
         
+        // Start timer
         async function startTimer() {
             // Validate inputs
             const edgeId = document.getElementById('edgeSelect').value;
@@ -535,20 +400,13 @@
                 return;
             }
             
-            // Reset laps
-            laps = [];
-            updateLapsDisplay();
-            
             // Start the timer
             startTime = Date.now();
-            lastLapTime = startTime;
             timerInterval = setInterval(updateTimerDisplay, 100);
             
             // Update UI
             document.getElementById('startBtn').style.display = 'none';
-            document.getElementById('lapBtn').style.display = 'block';
             document.getElementById('stopBtn').style.display = 'block';
-            document.getElementById('lapsContainer').classList.add('active');
             
             // Disable form inputs
             disableInputs(true);
@@ -571,84 +429,13 @@
             }
         }
         
-        function recordLap() {
-            const currentTime = Date.now();
-            const totalElapsed = (currentTime - startTime) / 1000;
-            const lapTime = (currentTime - lastLapTime) / 1000;
-            
-            laps.push({
-                number: laps.length + 1,
-                totalTime: totalElapsed,
-                lapTime: lapTime,
-                timestamp: currentTime
-            });
-            
-            lastLapTime = currentTime;
-            updateLapsDisplay();
-            
-            // Visual feedback
-            const lapBtn = document.getElementById('lapBtn');
-            lapBtn.textContent = '✓ Lap Recorded';
-            setTimeout(() => {
-                lapBtn.textContent = '🏁 Lap';
-            }, 500);
-        }
-        
-        function updateLapsDisplay() {
-            const lapsList = document.getElementById('lapsList');
-            
-            if (laps.length === 0) {
-                lapsList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">No laps recorded yet</div>';
-                document.getElementById('lapStats').style.display = 'none';
-                return;
-            }
-            
-            // Find fastest and slowest laps
-            const lapTimes = laps.map(l => l.lapTime);
-            const fastest = Math.min(...lapTimes);
-            const slowest = Math.max(...lapTimes);
-            const average = lapTimes.reduce((a, b) => a + b, 0) / lapTimes.length;
-            
-            // Update lap list
-            let html = '';
-            laps.forEach((lap, index) => {
-                const isFastest = lap.lapTime === fastest && laps.length > 1;
-                const isSlowest = lap.lapTime === slowest && laps.length > 1;
-                const className = isFastest ? 'lap-fastest' : (isSlowest ? 'lap-slowest' : '');
-                
-                html += `
-                    <div class="lap-item ${className}">
-                        <span class="lap-number">Lap ${lap.number}</span>
-                        <span class="lap-time">${formatTime(lap.totalTime)}</span>
-                        <span class="lap-split">+${formatTime(lap.lapTime)}</span>
-                    </div>
-                `;
-            });
-            
-            lapsList.innerHTML = html;
-            
-            // Update stats
-            if (laps.length > 1) {
-                document.getElementById('lapStats').style.display = 'flex';
-                document.getElementById('fastestLap').textContent = formatTime(fastest);
-                document.getElementById('slowestLap').textContent = formatTime(slowest);
-                document.getElementById('avgLap').textContent = formatTime(average);
-            }
-        }
-        
-        function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = (seconds % 60).toFixed(1);
-            return mins > 0 ? `${mins}:${secs.padStart(4, '0')}` : `${secs}s`;
-        }
-        
+        // Stop timer
         async function stopTimer() {
             clearInterval(timerInterval);
             
             const duration = (Date.now() - startTime) / 1000;
             
             // Update UI
-            document.getElementById('lapBtn').style.display = 'none';
             document.getElementById('stopBtn').style.display = 'none';
             document.getElementById('saveBtn').style.display = 'block';
             
@@ -657,16 +444,14 @@
                 await fetch('/stop', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ 
-                        duration,
-                        laps: laps.length > 0 ? laps : null
-                    })
+                    body: JSON.stringify({ duration })
                 });
             } catch (error) {
                 console.error('Error stopping timer:', error);
             }
         }
         
+        // Save timer
         async function saveTimer() {
             try {
                 const notes = document.getElementById('notes').value.trim();
@@ -674,17 +459,13 @@
                 const response = await fetch('/save', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ 
-                        notes: notes || '',
-                        laps: laps.length > 0 ? laps : null
-                    })
+                    body: JSON.stringify({ notes: notes || '' })
                 });
                 
                 const data = await response.json();
                 
                 if (data.status === 'saved') {
-                    const lapInfo = laps.length > 0 ? ` (${laps.length} laps)` : '';
-                    showMessage(`✅ Saved! Duration: ${data.duration.toFixed(2)}s${lapInfo}`, 'success');
+                    showMessage(`✅ Saved! Duration: ${data.duration.toFixed(2)}s`, 'success');
                     resetTimer();
                 } else {
                     showMessage('❌ Error saving', 'error');
@@ -695,6 +476,7 @@
             }
         }
         
+        // Update timer display
         function updateTimerDisplay() {
             const elapsed = Math.floor((Date.now() - startTime) / 1000);
             const hours = Math.floor(elapsed / 3600);
@@ -705,22 +487,20 @@
                 `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         }
         
+        // Reset timer
         function resetTimer() {
             document.getElementById('timerDisplay').textContent = '00:00:00';
             document.getElementById('saveBtn').style.display = 'none';
             document.getElementById('startBtn').style.display = 'block';
-            document.getElementById('lapsContainer').classList.remove('active');
             
-            // Clear notes
+            // Clear notes and batch ID
             document.getElementById('notes').value = '';
-            
-            // Reset laps
-            laps = [];
-            updateLapsDisplay();
+            // Keep batch ID for convenience
             
             disableInputs(false);
         }
         
+        // Disable/enable inputs
         function disableInputs(disabled) {
             document.getElementById('graphSelect').disabled = disabled;
             document.getElementById('edgeSelect').disabled = disabled;
@@ -729,6 +509,7 @@
             document.getElementById('notes').disabled = disabled;
         }
         
+        // Show status message
         function showMessage(message, type) {
             const statusEl = document.getElementById('statusMessage');
             statusEl.textContent = message;

@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process Flow Visualization - Kitsu</title>
+    
+    <!-- Cytoscape.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 350px;
+            background: white;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .sidebar-header h1 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        
+        .controls {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        
+        select, button {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .legend {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .legend h3 {
+            font-size: 1em;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 3px solid #333;
+        }
+        
+        .legend-color.critical {
+            background: #dc2626;
+        }
+        
+        .legend-color.warning {
+            background: #f59e0b;
+        }
+        
+        .legend-color.healthy {
+            background: #10b981;
+        }
+        
+        .legend-color.no-data {
+            background: #e0e0e0;
+        }
+        
+        .legend-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .legend-label strong {
+            color: #333;
+        }
+        
+        .details-panel {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .details-panel h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .details-empty {
+            color: #999;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .metric-card {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .metric-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        
+        .metric-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+        
+        .status-badge.critical {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .status-badge.warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-badge.healthy {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        /* Main graph area */
+        .graph-container {
+            flex: 1;
+            position: relative;
+        }
+        
+        #cy {
+            width: 100%;
+            height: 100%;
+            background: #fafbfc;
+        }
+        
+        .graph-toolbar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+            z-index: 5;
+        }
+        
+        .toolbar-btn {
+            width: auto;
+            padding: 8px 15px;
+            font-size: 0.9em;
+            border: 1px solid #e0e0e0;
+            background: white;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+        
+        .toolbar-btn:hover {
+            background: #f3f4f6;
+        }
+        
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            color: #667eea;
+            z-index: 100;
+        }
+        
+        .nav-links {
+            padding: 15px 20px;
+            border-top: 1px solid #e0e0e0;
+            margin-top: auto;
+        }
+        
+        .nav-links a {
+            display: block;
+            padding: 8px;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        
+        .nav-links a:hover {
+            background: #f0f4ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>🗺️ Process Flow Map</h1>
+                <p style="font-size: 0.9em; opacity: 0.9;">Interactive bottleneck visualization</p>
+            </div>
+            
+            <div class="controls">
+                <div class="form-group">
+                    <label>Select Process Graph</label>
+                    <select id="graphSelect" onchange="loadGraph()">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Analysis Time Window</label>
+                    <select id="timeWindow" onchange="loadGraph()">
+                        <option value="4">Last 4 hours</option>
+                        <option value="8">Last 8 hours</option>
+                        <option value="24" selected>Last 24 hours</option>
+                        <option value="48">Last 48 hours</option>
+                        <option value="168">Last week</option>
+                    </select>
+                </div>
+                
+                <button onclick="loadGraph()">🔄 Refresh Analysis</button>
+            </div>
+            
+            <div class="legend">
+                <h3>Machine Status</h3>
+                <div class="legend-item">
+                    <div class="legend-color critical"></div>
+                    <div class="legend-label">
+                        <strong>Critical</strong><br>
+                        Score 67-100
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color warning"></div>
+                    <div class="legend-label">
+                        <strong>Warning</strong><br>
+                        Score 34-66
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color healthy"></div>
+                    <div class="legend-label">
+                        <strong>Healthy</strong><br>
+                        Score 0-33
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color no-data"></div>
+                    <div class="legend-label">
+                        <strong>No Data</strong><br>
+                        No recent events
+                    </div>
+                </div>
+            </div>
+            
+            <div class="details-panel" id="detailsPanel">
+                <div class="details-empty">
+                    👆 Click on a machine or process flow to see details
+                </div>
+            </div>
+            
+            <div class="nav-links">
+                <a href="/">⏱️ Timer</a>
+                <a href="/graph-builder">🏗️ Graph Builder</a>
+                <a href="/analysis-dashboard">📊 Analysis Dashboard</a>
+            </div>
+        </div>
+        
+        <!-- Main Graph Area -->
+        <div class="graph-container">
+            <div id="cy"></div>
+            
+            <div class="graph-toolbar">
+                <button class="toolbar-btn" onclick="fitGraph()">📐 Fit to Screen</button>
+                <button class="toolbar-btn" onclick="resetLayout()">🔄 Reset Layout</button>
+                <button class="toolbar-btn" onclick="exportImage()">📸 Export Image</button>
+            </div>
+            
+            <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+                Loading graph...
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let cy = null;
+        let currentGraphId = null;
+        let bottleneckData = {};
+        
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            initializeCytoscape();
+            loadGraphs();
+        });
+        
+        // Initialize Cytoscape
+        function initializeCytoscape() {
+            cy = cytoscape({
+                container: document.getElementById('cy'),
+                
+                style: [
+                    // Node styles
+                    {
+                        selector: 'node',
+                        style: {
+                            'label': 'data(label)',
+                            'text-valign': 'center',
+                            'text-halign': 'center',
+                            'background-color': 'data(color)',
+                            'border-width': 3,
+                            'border-color': '#333',
+                            'width': 80,
+                            'height': 80,
+                            'font-size': 14,
+                            'font-weight': 'bold',
+                            'color': '#333',
+                            'text-wrap': 'wrap',
+                            'text-max-width': 70
+                        }
+                    },
+                    {
+                        selector: 'node:selected',
+                        style: {
+                            'border-width': 5,
+                            'border-color': '#667eea'
+                        }
+                    },
+                    // Edge styles
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 'data(width)',
+                            'line-color': '#999',
+                            'target-arrow-color': '#999',
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier',
+                            'label': 'data(label)',
+                            'font-size': 11,
+                            'text-background-color': '#fff',
+                            'text-background-opacity': 0.8,
+                            'text-background-padding': 3,
+                            'color': '#666'
+                        }
+                    },
+                    {
+                        selector: 'edge:selected',
+                        style: {
+                            'line-color': '#667eea',
+                            'target-arrow-color': '#667eea',
+                            'width': 4
+                        }
+                    }
+                ],
+                
+                layout: {
+                    name: 'cose',
+                    animate: true,
+                    animationDuration: 500,
+                    nodeRepulsion: 8000,
+                    idealEdgeLength: 100,
+                    edgeElasticity: 100
+                }
+            });
+            
+            // Click handlers
+            cy.on('tap', 'node', function(evt) {
+                const node = evt.target;
+                showNodeDetails(node.data());
+            });
+            
+            cy.on('tap', 'edge', function(evt) {
+                const edge = evt.target;
+                showEdgeDetails(edge.data());
+            });
+            
+            cy.on('tap', function(evt) {
+                if (evt.target === cy) {
+                    clearDetails();
+                }
+            });
+        }
+        
+        // Load available graphs
+        async function loadGraphs() {
+            try {
+                const response = await fetch('/api/graph/list');
+                const graphs = await response.json();
+                
+                const select = document.getElementById('graphSelect');
+                select.innerHTML = '<option value="">Select a graph...</option>';
+                
+                graphs.forEach(graph => {
+                    const option = document.createElement('option');
+                    option.value = graph.id;
+                    option.textContent = graph.name;
+                    select.appendChild(option);
+                });
+                
+                // Auto-select first graph
+                if (graphs.length > 0) {
+                    select.value = graphs[0].id;
+                    loadGraph();
+                }
+            } catch (error) {
+                console.error('Error loading graphs:', error);
+            }
+        }
+        
+        // Load and visualize graph
+        async function loadGraph() {
+            const graphId = document.getElementById('graphSelect').value;
+            const hours = document.getElementById('timeWindow').value;
+            
+            if (!graphId) return;
+            
+            currentGraphId = graphId;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            
+            try {
+                // Load graph structure and analysis in parallel
+                const [graphResponse, analysisResponse] = await Promise.all([
+                    fetch(`/api/graph/${graphId}`),
+                    fetch(`/api/graph/${graphId}/analyze?hours=${hours}`)
+                ]);
+                
+                const graphData = await graphResponse.json();
+                const analysisData = await analysisResponse.json();
+                
+                // Store bottleneck data for quick lookup
+                bottleneckData = {};
+                if (analysisData.bottlenecks) {
+                    analysisData.bottlenecks.forEach(b => {
+                        bottleneckData[b.node_id] = b;
+                    });
+                }
+                
+                // Build Cytoscape elements
+                const elements = buildCytoscapeElements(graphData, analysisData);
+                
+                // Update graph
+                cy.elements().remove();
+                cy.add(elements);
+                
+                // Apply layout
+                cy.layout({
+                    name: 'cose',
+                    animate: true,
+                    animationDuration: 500,
+                    nodeRepulsion: 8000,
+                    idealEdgeLength: 150,
+                    edgeElasticity: 100
+                }).run();
+                
+                document.getElementById('loadingOverlay').style.display = 'none';
+                
+            } catch (error) {
+                console.error('Error loading graph:', error);
+                document.getElementById('loadingOverlay').style.display = 'none';
+                alert('Error loading graph. Make sure you have recorded some events!');
+            }
+        }
+        
+        // Build Cytoscape elements from graph data
+        function buildCytoscapeElements(graphData, analysisData) {
+            const elements = [];
+            
+            // Add nodes (machines)
+            graphData.nodes.forEach(node => {
+                const bottleneck = bottleneckData[node.id];
+                const score = bottleneck ? bottleneck.total_score : 0;
+                const eventCount = bottleneck ? bottleneck.event_count : 0;
+                
+                // Determine color based on bottleneck score
+                let color = '#e0e0e0'; // No data
+                if (eventCount > 0) {
+                    if (score > 66) {
+                        color = '#dc2626'; // Critical
+                    } else if (score > 33) {
+                        color = '#f59e0b'; // Warning
+                    } else {
+                        color = '#10b981'; // Healthy
+                    }
+                }
+                
+                elements.push({
+                    group: 'nodes',
+                    data: {
+                        id: 'n' + node.id,
+                        nodeId: node.id,
+                        label: node.machine_name,
+                        color: color,
+                        score: score,
+                        eventCount: eventCount,
+                        bottleneck: bottleneck,
+                        machineType: node.machine_type,
+                        capacity: node.theoretical_capacity
+                    }
+                });
+            });
+            
+            // Add edges (process flows)
+            graphData.edges.forEach(edge => {
+                // Calculate edge width based on flow rate
+                const width = 2; // Default, could be dynamic based on event count
+                
+                elements.push({
+                    group: 'edges',
+                    data: {
+                        id: 'e' + edge.id,
+                        edgeId: edge.id,
+                        source: 'n' + edge.source_node_id,
+                        target: 'n' + edge.target_node_id,
+                        label: edge.process_name,
+                        width: width,
+                        processName: edge.process_name,
+                        expectedDuration: edge.expected_duration
+                    }
+                });
+            });
+            
+            return elements;
+        }
+        
+        // Show node details
+        function showNodeDetails(nodeData) {
+            const bottleneck = nodeData.bottleneck;
+            
+            let html = `
+                <h3>🏭 ${nodeData.label}</h3>
+            `;
+            
+            if (!bottleneck || bottleneck.event_count === 0) {
+                html += `
+                    <div class="metric-card">
+                        <div class="metric-label">Status</div>
+                        <div class="metric-value">No Data</div>
+                        <p style="color: #999; font-size: 0.9em; margin-top: 10px;">
+                            No events recorded for this machine in the selected time window.
+                        </p>
+                    </div>
+                `;
+            } else {
+                const status = bottleneck.total_score > 66 ? 'critical' : 
+                              bottleneck.total_score > 33 ? 'warning' : 'healthy';
+                const statusLabel = status === 'critical' ? '🔴 CRITICAL BOTTLENECK' :
+                                   status === 'warning' ? '🟡 NEEDS ATTENTION' : '🟢 HEALTHY';
+                
+                html += `
+                    <div class="status-badge ${status}">${statusLabel}</div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-label">Bottleneck Score</div>
+                        <div class="metric-value">${bottleneck.total_score.toFixed(1)}/100</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-label">Utilization</div>
+                        <div class="metric-value">${bottleneck.utilization_percent.toFixed(1)}%</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-label">Throughput</div>
+                        <div class="metric-value">${bottleneck.actual_throughput.toFixed(2)}</div>
+                        <div class="metric-label">units per hour</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-label">Events Recorded</div>
+                        <div class="metric-value">${bottleneck.event_count}</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-label">Variance (CV)</div>
+                        <div class="metric-value">${bottleneck.cv.toFixed(3)}</div>
+                    </div>
+                    
+                    <h3 style="margin-top: 20px; margin-bottom: 10px;">Score Breakdown</h3>
+                    <div class="metric-card">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Utilization</span>
+                            <strong>${bottleneck.utilization_score.toFixed(1)}/30</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Queue Time</span>
+                            <strong>${bottleneck.queue_score.toFixed(1)}/25</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Variance</span>
+                            <strong>${bottleneck.variance_score.toFixed(1)}/20</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Centrality</span>
+                            <strong>${bottleneck.centrality_score.toFixed(1)}/15</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Downstream</span>
+                            <strong>${bottleneck.downstream_score.toFixed(1)}/10</strong>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('detailsPanel').innerHTML = html;
+        }
+        
+        // Show edge details
+        function showEdgeDetails(edgeData) {
+            let html = `
+                <h3>🔗 ${edgeData.processName}</h3>
+                
+                <div class="metric-card">
+                    <div class="metric-label">Process Flow</div>
+                    <div class="metric-value" style="font-size: 1em;">
+                        ${cy.$('#' + edgeData.source).data('label')} 
+                        → 
+                        ${cy.$('#' + edgeData.target).data('label')}
+                    </div>
+                </div>
+            `;
+            
+            if (edgeData.expectedDuration) {
+                html += `
+                    <div class="metric-card">
+                        <div class="metric-label">Expected Duration</div>
+                        <div class="metric-value">${edgeData.expectedDuration}s</div>
+                    </div>
+                `;
+            }
+            
+            html += `
+                <p style="color: #999; font-size: 0.9em; margin-top: 15px;">
+                    Click on a machine node to see detailed bottleneck analysis.
+                </p>
+            `;
+            
+            document.getElementById('detailsPanel').innerHTML = html;
+        }
+        
+        // Clear details
+        function clearDetails() {
+            document.getElementById('detailsPanel').innerHTML = `
+                <div class="details-empty">
+                    👆 Click on a machine or process flow to see details
+                </div>
+            `;
+        }
+        
+        // Graph controls
+        function fitGraph() {
+            cy.fit(null, 50);
+        }
+        
+        function resetLayout() {
+            cy.layout({
+                name: 'cose',
+                animate: true,
+                animationDuration: 500,
+                nodeRepulsion: 8000,
+                idealEdgeLength: 150,
+                edgeElasticity: 100
+            }).run();
+        }
+        
+        function exportImage() {
+            const png = cy.png({
+                output: 'blob',
+                full: true,
+                scale: 2
+            });
+            
+            const url = URL.createObjectURL(png);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'process-flow-map.png';
+            link.click();
+        }
+    </script>
+</body>
+</html>

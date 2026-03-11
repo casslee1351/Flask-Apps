@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Saved Runs</title>
+</head>
+<body>
+    <h1>Saved Timer Runs</h1>
+
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Process</th>
+            <th>Machine</th>
+            <th>Operator</th>
+            <th>Notes</th>
+            <th>Time Type</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Total Cycle Time (s)</th>
+            <th>Lap Times</th>
+        </tr>
+
+        {% for run in runs %}
+        <tr>
+            <td>{{ run.id }}</td>
+            <td>{{ run.process }}</td>
+            <td>{{ run.machine }}</td>
+            <td>{{ run.operator }}</td>
+            <td>{{ run.notes }}</td>
+            <td>{{ run.time_type }}</td>
+            <td>{{ run.start_time }}</td>
+            <td>{{ run.end_time }}</td>
+            <td>{{ run.duration }}</td>
+            <td>
+                {% if run.laps %}
+                    <ul>
+                    {% for lap in run.laps %}
+                        <li>Lap {{ lap.lap_number }}: {{ lap.lap_duration | round(2) }}s</li>
+                    {% endfor %}
+                    </ul>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    
+</body>
+</html>

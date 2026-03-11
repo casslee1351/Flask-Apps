@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Builder - Kitsu Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+        }
+        
+        .sidebar {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        
+        .canvas-area {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-height: 600px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section h2 {
+            font-size: 1.2em;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .success {
+            background: #10b981;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .error {
+            background: #ef4444;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .graph-list {
+            margin-bottom: 20px;
+        }
+        
+        .graph-item {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .graph-item:hover {
+            background: #f9fafb;
+            border-color: #667eea;
+        }
+        
+        .graph-item.active {
+            background: #ede9fe;
+            border-color: #667eea;
+        }
+        
+        .graph-item h3 {
+            color: #333;
+            font-size: 1em;
+            margin-bottom: 5px;
+        }
+        
+        .graph-item p {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .node-list, .edge-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .node-item, .edge-item {
+            background: #f9fafb;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .node-item strong, .edge-item strong {
+            color: #333;
+        }
+        
+        .node-item span, .edge-item span {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .delete-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            width: 200px;  /* Adjusted width for better visibility, NEED TO CHANGE??? */
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+        
+        .delete-btn:hover {
+            background: #dc2626;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .nav-links {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .nav-links a {
+            display: block;
+            padding: 10px;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+        
+        .nav-links a:hover {
+            background: #f3f4f6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏗️ Process Graph Builder</h1>
+            <p class="subtitle">Define your manufacturing process flow - machines and connections</p>
+        </header>
+        
+        <div class="main-content">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Step 1: Create/Select Graph -->
+                <div class="section">
+                    <h2>1. Select Graph</h2>
+                    <div class="graph-list" id="graphList">
+                        <div class="empty-state">Loading...</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <input type="text" id="newGraphName" placeholder="New graph name">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="newGraphDesc" placeholder="Description (optional)">
+                    </div>
+                    <button onclick="createGraph()">Create New Graph</button>
+                    <div class="success" id="graphSuccess"></div>
+                </div>
+                
+                <!-- Step 2: Add Machines -->
+                <div class="section">
+                    <h2>2. Add Machine</h2>
+                    <div class="form-group">
+                        <label>Machine Name *</label>
+                        <input type="text" id="machineName" placeholder="e.g., CNC Cutter">
+                    </div>
+                    <div class="form-group">
+                        <label>Machine Type</label>
+                        <select id="machineType">
+                            <option value="">Select type...</option>
+                            <option value="CNC">CNC</option>
+                            <option value="Assembly">Assembly</option>
+                            <option value="Drilling">Drilling</option>
+                            <option value="Inspection">Inspection</option>
+                            <option value="Welding">Welding</option>
+                            <option value="Painting">Painting</option>
+                            <option value="Packaging">Packaging</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Capacity (units/hour)</label>
+                        <input type="number" id="machineCapacity" placeholder="e.g., 50">
+                    </div>
+                    <button onclick="addMachine()">Add Machine</button>
+                    <div class="success" id="machineSuccess"></div>
+                    <div class="error" id="machineError"></div>
+                </div>
+                
+                <!-- Step 3: Connect Machines -->
+                <div class="section">
+                    <h2>3. Connect Machines</h2>
+                    <div class="form-group">
+                        <label>From Machine *</label>
+                        <select id="sourceNode">
+                            <option value="">Select source...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>To Machine *</label>
+                        <select id="targetNode">
+                            <option value="">Select target...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Process Name *</label>
+                        <input type="text" id="processName" placeholder="e.g., Cutting">
+                    </div>
+                    <div class="form-group">
+                        <label>Expected Duration (seconds)</label>
+                        <input type="number" id="expectedDuration" placeholder="e.g., 120">
+                    </div>
+                    <button onclick="addEdge()">Connect Machines</button>
+                    <div class="success" id="edgeSuccess"></div>
+                    <div class="error" id="edgeError"></div>
+                </div>
+                
+                <!-- Navigation -->
+                <div class="nav-links">
+                    <a href="/">← Back to Timer</a>
+                    <a href="/dashboard">📊 View Dashboard</a>
+                </div>
+            </div>
+            
+            <!-- Main Canvas -->
+            <div class="canvas-area">
+                <h2>Current Graph Structure</h2>
+                <p style="color: #666; margin-bottom: 20px;">Machines and connections in your selected graph</p>
+                
+                <div class="section">
+                    <h3 style="color: #667eea; margin-bottom: 10px;">🏭 Machines</h3>
+                    <div class="node-list" id="nodeList">
+                        <div class="empty-state">Select a graph to view machines</div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3 style="color: #667eea; margin-bottom: 10px;">🔗 Process Flows</h3>
+                    <div class="edge-list" id="edgeList">
+                        <div class="empty-state">Add machines and connect them to see flows</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentGraphId = null;
+        
+        // Load graphs on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            loadGraphs();
+        });
+        
+        // Load all graphs
+        async function loadGraphs() {
+            try {
+                const response = await fetch('/api/graph/list');
+                const graphs = await response.json();
+                
+                const graphList = document.getElementById('graphList');
+                
+                if (graphs.length === 0) {
+                    graphList.innerHTML = '<div class="empty-state">No graphs yet. Create one below!</div>';
+                } else {
+                    graphList.innerHTML = '';
+                    graphs.forEach(graph => {
+                        const item = document.createElement('div');
+                        item.className = 'graph-item';
+                        item.onclick = () => selectGraph(graph.id);
+                        item.innerHTML = `
+                            <h3>${graph.name}</h3>
+                            <p>${graph.node_count} machines, ${graph.edge_count} connections</p>
+                        `;
+                        graphList.appendChild(item);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading graphs:', error);
+            }
+        }
+        
+        // Create new graph
+        async function createGraph() {
+            const name = document.getElementById('newGraphName').value;
+            const description = document.getElementById('newGraphDesc').value;
+            
+            if (!name) {
+                alert('Please enter a graph name');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/graph/create', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name, description})
+                });
+                
+                const graph = await response.json();
+                
+                showMessage('graphSuccess', `Graph "${graph.name}" created!`);
+                document.getElementById('newGraphName').value = '';
+                document.getElementById('newGraphDesc').value = '';
+                
+                loadGraphs();
+                selectGraph(graph.id);
+            } catch (error) {
+                alert('Error creating graph: ' + error);
+            }
+        }
+        
+        // Select a graph
+        async function selectGraph(graphId) {
+            currentGraphId = graphId;
+            
+            // Update active state
+            document.querySelectorAll('.graph-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.closest('.graph-item').classList.add('active');
+            
+            // Load graph details
+            await loadGraphDetails(graphId);
+        }
+        
+        // Load graph details (nodes and edges)
+        async function loadGraphDetails(graphId) {
+            try {
+                const response = await fetch(`/api/graph/${graphId}`);
+                const data = await response.json();
+                
+                // Display nodes
+                const nodeList = document.getElementById('nodeList');
+                if (data.nodes.length === 0) {
+                    nodeList.innerHTML = '<div class="empty-state">No machines yet. Add one!</div>';
+                } else {
+                    nodeList.innerHTML = '';
+                    data.nodes.forEach(node => {
+                        const item = document.createElement('div');
+                        item.className = 'node-item';
+                        item.innerHTML = `
+                            <div>
+                                <strong>${node.machine_name}</strong><br>
+                                <span>${node.machine_type || 'No type'} - ${node.theoretical_capacity || 0} units/hr</span>
+                            </div>
+                            <button class="delete-btn" onclick="deleteNode(${node.id})">Delete</button>
+                        `;
+                        nodeList.appendChild(item);
+                    });
+                }
+                
+                // Display edges
+                const edgeList = document.getElementById('edgeList');
+                if (data.edges.length === 0) {
+                    edgeList.innerHTML = '<div class="empty-state">No connections yet. Connect machines!</div>';
+                } else {
+                    edgeList.innerHTML = '';
+                    data.edges.forEach(edge => {
+                        const item = document.createElement('div');
+                        item.className = 'edge-item';
+                        item.innerHTML = `
+                            <div>
+                                <strong>${edge.process_name}</strong><br>
+                                <span>${edge.source_machine} → ${edge.target_machine} (${edge.expected_duration || 0}s)</span>
+                            </div>
+                            <button class="delete-btn" onclick="deleteEdge(${edge.id})">Delete</button>
+                        `;
+                        edgeList.appendChild(item);
+                    });
+                }
+                
+                // Update dropdowns for edge creation
+                updateNodeDropdowns(data.nodes);
+            } catch (error) {
+                console.error('Error loading graph details:', error);
+            }
+        }
+        
+        // Update node dropdowns
+        function updateNodeDropdowns(nodes) {
+            const sourceSelect = document.getElementById('sourceNode');
+            const targetSelect = document.getElementById('targetNode');
+            
+            sourceSelect.innerHTML = '<option value="">Select source...</option>';
+            targetSelect.innerHTML = '<option value="">Select target...</option>';
+            
+            nodes.forEach(node => {
+                const option = `<option value="${node.id}">${node.machine_name}</option>`;
+                sourceSelect.innerHTML += option;
+                targetSelect.innerHTML += option;
+            });
+        }
+        
+        // Add machine
+        async function addMachine() {
+            if (!currentGraphId) {
+                showMessage('machineError', 'Please select a graph first', true);
+                return;
+            }
+            
+            const name = document.getElementById('machineName').value;
+            const type = document.getElementById('machineType').value;
+            const capacity = document.getElementById('machineCapacity').value;
+            
+            if (!name) {
+                showMessage('machineError', 'Machine name is required', true);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/graph/${currentGraphId}/node`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        machine_name: name,
+                        machine_type: type,
+                        theoretical_capacity: capacity ? parseFloat(capacity) : null
+                    })
+                });
+                
+                const node = await response.json();
+                
+                showMessage('machineSuccess', `Machine "${node.machine_name}" added!`);
+                document.getElementById('machineName').value = '';
+                document.getElementById('machineType').value = '';
+                document.getElementById('machineCapacity').value = '';
+                
+                loadGraphDetails(currentGraphId);
+                loadGraphs();
+            } catch (error) {
+                showMessage('machineError', 'Error adding machine: ' + error, true);
+            }
+        }
+        
+        // Add edge
+        async function addEdge() {
+            if (!currentGraphId) {
+                showMessage('edgeError', 'Please select a graph first', true);
+                return;
+            }
+            
+            const sourceId = document.getElementById('sourceNode').value;
+            const targetId = document.getElementById('targetNode').value;
+            const processName = document.getElementById('processName').value;
+            const duration = document.getElementById('expectedDuration').value;
+            
+            if (!sourceId || !targetId || !processName) {
+                showMessage('edgeError', 'All fields are required', true);
+                return;
+            }
+            
+            if (sourceId === targetId) {
+                showMessage('edgeError', 'Source and target must be different', true);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/graph/${currentGraphId}/edge`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        source_node_id: parseInt(sourceId),
+                        target_node_id: parseInt(targetId),
+                        process_name: processName,
+                        expected_duration: duration ? parseFloat(duration) : null
+                    })
+                });
+                
+                const edge = await response.json();
+                
+                showMessage('edgeSuccess', `Connection "${edge.process_name}" created!`);
+                document.getElementById('sourceNode').value = '';
+                document.getElementById('targetNode').value = '';
+                document.getElementById('processName').value = '';
+                document.getElementById('expectedDuration').value = '';
+                
+                loadGraphDetails(currentGraphId);
+                loadGraphs();
+            } catch (error) {
+                showMessage('edgeError', 'Error creating connection: ' + error, true);
+            }
+        }
+        
+        // Delete node
+        async function deleteNode(nodeId) {
+            if (!confirm('Delete this machine? This will also delete all connections.')) {
+                return;
+            }
+            
+            try {
+                await fetch(`/api/graph/node/${nodeId}`, {method: 'DELETE'});
+                loadGraphDetails(currentGraphId);
+                loadGraphs();
+            } catch (error) {
+                alert('Error deleting machine: ' + error);
+            }
+        }
+        
+        // Delete edge
+        async function deleteEdge(edgeId) {
+            if (!confirm('Delete this connection?')) {
+                return;
+            }
+            
+            try {
+                await fetch(`/api/graph/edge/${edgeId}`, {method: 'DELETE'});
+                loadGraphDetails(currentGraphId);
+                loadGraphs();
+            } catch (error) {
+                alert('Error deleting connection: ' + error);
+            }
+        }
+        
+        // Show success/error message
+        function showMessage(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+            
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

@@ -13,7 +13,7 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #aaa1e2 0%, #ffffff 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -59,7 +59,7 @@
         
         input:focus, select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #aaa1e2;
         }
         
         .process-info {
@@ -120,13 +120,13 @@
         }
         
         .btn-start {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             color: white;
         }
         
         .btn-start:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
         }
         
         .btn-lap {
@@ -319,7 +319,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>⏱️ Process Timer</h1>
+        <h1>Process Timer</h1>
         
         <div id="formSection">
             <div class="form-group">
@@ -375,13 +375,13 @@
             
             <!-- Controls -->
             <div class="controls">
-                <button class="btn-start" id="startBtn" onclick="startTimer()">▶️ Start</button>
+                <button class="btn-start" id="startBtn" onclick="startTimer()">Start</button>
                 <button class="btn-lap" id="lapBtn" onclick="recordLap()">🏁 Lap</button>
                 <button class="btn-stop" id="stopBtn" onclick="stopTimer()">⏸️ Stop</button>
             </div>
             
             <div class="controls">
-                <button class="btn-save" id="saveBtn" onclick="saveTimer()">💾 Save Run</button>
+                <button class="btn-save" id="saveBtn" onclick="saveTimer()">Save Run</button>
             </div>
             
             <!-- Laps Display -->

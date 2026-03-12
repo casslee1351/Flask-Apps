@@ -1,0 +1,353 @@
+/*
+ * index.css
+ * Main stylesheet
+ */
+
+/* ===========================
+   Reset & Box Model
+   =========================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ===========================
+   Base / Body
+   =========================== */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #aaa1e2 0%, #ffffff 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* ===========================
+   Layout
+   =========================== */
+.container {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    padding: 40px;
+    max-width: 700px;
+    width: 100%;
+}
+
+/* ===========================
+   Typography
+   =========================== */
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 2em;
+}
+
+/* ===========================
+   Form Elements
+   =========================== */
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 8px;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: #aaa1e2;
+}
+
+.helper-text {
+    font-size: 0.85em;
+    color: #999;
+    margin-top: 5px;
+}
+
+.required {
+    color: #ef4444;
+}
+
+/* ===========================
+   Process Info
+   =========================== */
+.process-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: none;
+}
+
+.process-info.active {
+    display: block;
+}
+
+.process-info h3 {
+    color: #667eea;
+    font-size: 0.9em;
+    margin-bottom: 8px;
+}
+
+.process-info p {
+    color: #666;
+    font-size: 0.95em;
+    margin: 5px 0;
+}
+
+/* ===========================
+   Timer
+   =========================== */
+.timer-section {
+    background: #f9fafb;
+    padding: 20px;
+    border-radius: 12px;
+    margin: 20px 0;
+}
+
+.timer-display {
+    text-align: center;
+    font-size: 4em;
+    font-weight: bold;
+    color: #44405a;
+    margin: 20px 0;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ===========================
+   Buttons
+   =========================== */
+.controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+button {
+    flex: 1;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-start {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+}
+
+.btn-start:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+
+.btn-lap {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    display: none;
+}
+
+.btn-lap:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.btn-stop {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    display: none;
+}
+
+.btn-stop:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.btn-save {
+    background: linear-gradient(135deg, #5a5670 0%, #44405a 100%);
+    color: white;
+    display: none;
+}
+
+.btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(68, 64, 90, 0.4);
+}
+
+/* ===========================
+   Laps
+   =========================== */
+.laps-container {
+    display: none;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 20px;
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.laps-container.active {
+    display: block;
+}
+
+.laps-header {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.lap-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    margin: 5px 0;
+    background: #f9fafb;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.lap-item:hover {
+    background: #f3f4f6;
+}
+
+.lap-number {
+    font-weight: 600;
+    color: #667eea;
+}
+
+.lap-time {
+    font-family: 'Courier New', monospace;
+    color: #666;
+}
+
+.lap-split {
+    font-family: 'Courier New', monospace;
+    color: #999;
+    font-size: 0.9em;
+}
+
+.lap-fastest {
+    background: #d1fae5 !important;
+}
+
+.lap-slowest {
+    background: #fee2e2 !important;
+}
+
+.lap-stats {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.lap-stat {
+    flex: 1;
+    text-align: center;
+}
+
+.lap-stat-label {
+    font-size: 0.75em;
+    color: #999;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+}
+
+.lap-stat-value {
+    font-weight: 600;
+    color: #333;
+    font-family: 'Courier New', monospace;
+}
+
+/* ===========================
+   Status Messages
+   =========================== */
+.status-message {
+    text-align: center;
+    padding: 15px;
+    margin-top: 20px;
+    border-radius: 8px;
+    display: none;
+}
+
+.status-message.success {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-message.error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* ===========================
+   Navigation
+   =========================== */
+.nav-links {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px solid #e0e0e0;
+    display: flex;
+    gap: 10px;
+}
+
+.nav-links a {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    color: #667eea;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background 0.3s;
+}
+
+.nav-links a:hover {
+    background: #f3f4f6;
+}
+
+/* ===========================
+   Empty State
+   =========================== */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+.empty-state a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.empty-state a:hover {
+    text-decoration: underline;
+}

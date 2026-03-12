@@ -13,7 +13,11 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f7fa;
+            background: linear-gradient(135deg, #d5d0f1 0%, #ffffff 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
         }
         
@@ -103,7 +107,7 @@
         .stat-value {
             font-size: 2em;
             font-weight: bold;
-            color: #667eea;
+            color: #44405a;
         }
         
         .table-container {
@@ -236,14 +240,16 @@
         
         .nav-links a {
             padding: 10px 20px;
-            color: #667eea;
+            color: #555072;
             text-decoration: none;
             border-radius: 8px;
-            background: #f0f4ff;
+            background: #edeaff;
+            transition: background 0.15s ease;
         }
         
         .nav-links a:hover {
-            background: #e0e7ff;
+            background: #e4e0ff;
+            color: #2563eb;
         }
         
         .loading {
@@ -256,7 +262,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>📋 Process Runs History</h1>
+            <h1>Process Runs History</h1>
             <p style="color: #666; margin-top: 10px;">Complete history of all timed processes</p>
             
             <div class="controls">
@@ -289,14 +295,14 @@
                 </div>
                 
                 <button onclick="clearFilters()">Clear Filters</button>
-                <button onclick="loadEvents()">🔄 Refresh</button>
+                <button onclick="loadEvents()">Refresh</button>
             </div>
             
             <div class="nav-links">
-                <a href="/">⏱️ Timer</a>
-                <a href="/graph-builder">🏗️ Graph Builder</a>
-                <a href="/graph-view">🗺️ Graph View</a>
-                <a href="/analysis-dashboard">📊 Analytics</a>
+                <a href="/">Timer</a>
+                <a href="/graph-builder">Graph Builder</a>
+                <a href="/graph-view">Graph View</a>
+                <a href="/analysis-dashboard">Analytics</a>
             </div>
         </header>
         
@@ -325,7 +331,7 @@
             <div class="table-header">
                 <h2>Run History</h2>
                 <div class="table-actions">
-                    <button class="btn-export" onclick="exportToCSV()">📥 Export CSV</button>
+                    <button class="btn-export" onclick="exportToCSV()">Export CSV</button>
                 </div>
             </div>
             

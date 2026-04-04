@@ -8,13 +8,13 @@ This repository is where I keep all of my flask apps for development or experime
 **To Do**
 1. Incorporate multiple versions so Jonny and Raad can choose which design they prefer
 2. Initial dashboard layout for descriptive analytics (v1)
+3. Christi working on style updates - needs to be able to run the app --Cass updated requirements.txt
+	- Make tabs at the bottom into a button style - thinking a light, blendy color, and on hover a brighter color of lavender.
+4. Cassidy debugging some things, so it can take new notes with each lap - make it editable, and add milliseconds to timer
 
 **Questions**
 - How do we measure cycle times without engineer?
 	- Formulas, takt time
-- What should we use the BLE tags for?
-	- Syncing location of operator with timestamps?
-		- Yes, and distance traveled
 
 ## Flask API
 This Flask app is meant for experimenting with Next.js. Mostly just an example.

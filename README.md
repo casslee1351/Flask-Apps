@@ -15,6 +15,3 @@ This repository is where I keep all of my flask apps for development or experime
 **Questions**
 - How do we measure cycle times without engineer?
 	- Formulas, takt time
-
-## Flask API
-This Flask app is meant for experimenting with Next.js. Mostly just an example.

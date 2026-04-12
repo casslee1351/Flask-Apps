@@ -74,11 +74,33 @@
             </div>
             
             <!-- Laps Display -->
-            <div class="laps-container" id="lapsContainer">
+            <!-- <div class="laps-container" id="lapsContainer">
                 <div class="laps-header">
                     <span>Lap</span>
                     <span>Time</span>
                     <span>Split</span>
+                </div>
+                <div id="lapsList"></div>
+                
+                <div class="lap-stats" id="lapStats" style="display: none;">
+                    <div class="lap-stat">
+                        <div class="lap-stat-label">Fastest</div>
+                        <div class="lap-stat-value" id="fastestLap">—</div>
+                    </div>
+                    <div class="lap-stat">
+                        <div class="lap-stat-label">Slowest</div>
+                        <div class="lap-stat-value" id="slowestLap">—</div>
+                    </div>
+                    <div class="lap-stat">
+                        <div class="lap-stat-label">Average</div>
+                        <div class="lap-stat-value" id="avgLap">—</div>
+                    </div>
+                </div>
+            </div> -->
+            <div class="laps-container" id="lapsContainer">
+                <div class="laps-header">
+                    <span>Recorded Laps</span>
+                    <span style="font-size: 0.9em; color: #999;">Click lap notes to edit</span>
                 </div>
                 <div id="lapsList"></div>
                 
@@ -110,7 +132,7 @@
         </div>
     </div>
     
-    <script>
+    <!-- <script>
         let timerInterval = null;
         let startTime = null;
         let lastLapTime = null;
@@ -428,6 +450,386 @@
                 statusEl.style.display = 'none';
             }, 3000);
         }
-    </script>
+    </script> -->
+
+    <!-- // Replace your existing <script> section with this updated version: -->
+
+<script>
+    let timerInterval = null;
+    let startTime = null;
+    let lastLapTime = null;
+    let selectedEdge = null;
+    let graphs = [];
+    let laps = [];
+    
+    window.addEventListener('DOMContentLoaded', function() {
+        loadGraphs();
+    });
+    
+    async function loadGraphs() {
+        try {
+            const response = await fetch('/api/graph/list');
+            graphs = await response.json();
+            
+            const select = document.getElementById('graphSelect');
+            
+            if (graphs.length === 0) {
+                document.getElementById('formSection').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'block';
+                document.getElementById('startBtn').disabled = true;
+                return;
+            }
+            
+            select.innerHTML = '<option value="">Select a graph...</option>';
+            
+            graphs.forEach(graph => {
+                const option = document.createElement('option');
+                option.value = graph.id;
+                option.textContent = `${graph.name} (${graph.node_count} machines)`;
+                select.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error loading graphs:', error);
+            showMessage('Error loading graphs. Please refresh the page.', 'error');
+        }
+    }
+    
+    async function loadGraphEdges() {
+        const graphId = document.getElementById('graphSelect').value;
+        const edgeSelect = document.getElementById('edgeSelect');
+        
+        if (!graphId) {
+            edgeSelect.innerHTML = '<option value="">First select a graph above</option>';
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/graph/${graphId}`);
+            const data = await response.json();
+            
+            edgeSelect.innerHTML = '<option value="">Select a process flow...</option>';
+            
+            if (data.edges.length === 0) {
+                edgeSelect.innerHTML = '<option value="">No connections in this graph yet</option>';
+                showMessage('This graph has no process flows. Please add connections in the Graph Builder.', 'error');
+                return;
+            }
+            
+            data.edges.forEach(edge => {
+                const option = document.createElement('option');
+                option.value = edge.id;
+                option.textContent = `${edge.process_name} (${edge.source_machine} → ${edge.target_machine})`;
+                option.dataset.edge = JSON.stringify(edge);
+                edgeSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error loading edges:', error);
+            showMessage('Error loading process flows.', 'error');
+        }
+    }
+    
+    function updateProcessInfo() {
+        const edgeSelect = document.getElementById('edgeSelect');
+        const selectedOption = edgeSelect.options[edgeSelect.selectedIndex];
+        
+        if (!selectedOption.dataset.edge) {
+            document.getElementById('processInfo').classList.remove('active');
+            return;
+        }
+        
+        selectedEdge = JSON.parse(selectedOption.dataset.edge);
+        
+        document.getElementById('processFlow').textContent = 
+            `Flow: ${selectedEdge.source_machine} → ${selectedEdge.target_machine}`;
+        
+        if (selectedEdge.expected_duration) {
+            document.getElementById('processExpected').textContent = 
+                `Expected Time: ${selectedEdge.expected_duration} seconds`;
+        } else {
+            document.getElementById('processExpected').textContent = '';
+        }
+        
+        document.getElementById('processInfo').classList.add('active');
+    }
+    
+    async function startTimer() {
+        const edgeId = document.getElementById('edgeSelect').value;
+        const operator = document.getElementById('operator').value.trim();
+        
+        if (!edgeId) {
+            showMessage('Please select a process flow', 'error');
+            return;
+        }
+        
+        if (!operator) {
+            showMessage('Please enter operator name', 'error');
+            return;
+        }
+        
+        laps = [];
+        updateLapsDisplay();
+        
+        startTime = Date.now();
+        lastLapTime = startTime;
+        timerInterval = setInterval(updateTimerDisplay, 100);
+        
+        // Update UI
+        document.getElementById('startBtn').style.display = 'none';
+        document.getElementById('lapBtn').style.display = 'block';
+        document.getElementById('stopBtn').style.display = 'block';
+        document.getElementById('lapsContainer').classList.add('active');
+        
+        // Repurpose notes field for lap notes
+        const notesField = document.getElementById('notes');
+        const notesLabel = notesField.previousElementSibling;
+        notesLabel.innerHTML = 'Note for Next Lap (Optional)';
+        notesField.placeholder = 'e.g., Part A installed - slight misalignment';
+        notesField.value = '';
+        notesField.disabled = false;
+        notesField.focus();
+        
+        disableInputs(true);
+        
+        try {
+            const batchId = document.getElementById('batchId').value.trim();
+            
+            await fetch('/start', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    edge_id: parseInt(edgeId),
+                    operator: operator,
+                    batch_id: batchId || null
+                })
+            });
+        } catch (error) {
+            console.error('Error starting timer:', error);
+        }
+    }
+    
+    function recordLap() {
+        const currentTime = Date.now();
+        const totalElapsed = (currentTime - startTime) / 1000;
+        const lapTime = (currentTime - lastLapTime) / 1000;
+        
+        // Get note from the notes field
+        const notesField = document.getElementById('notes');
+        const note = notesField.value.trim();
+        
+        laps.push({
+            number: laps.length + 1,
+            totalTime: totalElapsed,
+            lapTime: lapTime,
+            timestamp: currentTime,
+            note: note
+        });
+        
+        lastLapTime = currentTime;
+        
+        // Clear notes field for next lap
+        notesField.value = '';
+        notesField.focus();
+        
+        updateLapsDisplay();
+        
+        // Visual feedback
+        const lapBtn = document.getElementById('lapBtn');
+        lapBtn.textContent = '✓ Lap Recorded';
+        setTimeout(() => {
+            lapBtn.textContent = '🏁 Lap';
+        }, 500);
+    }
+    
+    function updateLapsDisplay() {
+        const lapsList = document.getElementById('lapsList');
+        
+        if (laps.length === 0) {
+            lapsList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">No laps recorded yet</div>';
+            document.getElementById('lapStats').style.display = 'none';
+            return;
+        }
+        
+        const lapTimes = laps.map(l => l.lapTime);
+        const fastest = Math.min(...lapTimes);
+        const slowest = Math.max(...lapTimes);
+        const average = lapTimes.reduce((a, b) => a + b, 0) / lapTimes.length;
+        
+        let html = '';
+        laps.forEach((lap, index) => {
+            const isFastest = lap.lapTime === fastest && laps.length > 1;
+            const isSlowest = lap.lapTime === slowest && laps.length > 1;
+            const className = isFastest ? 'lap-fastest' : (isSlowest ? 'lap-slowest' : '');
+            
+            html += `
+                <div class="lap-item ${className}" id="lap-${index}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span class="lap-number">Lap ${lap.number}</span>
+                        <div style="display: flex; gap: 15px; font-family: 'Courier New', monospace; font-size: 0.9em;">
+                            <span class="lap-time">${formatTime(lap.totalTime)}</span>
+                            <span class="lap-split">+${formatTime(lap.lapTime)}</span>
+                        </div>
+                    </div>
+                    <div class="lap-notes-section">
+                        <div class="lap-notes-display ${lap.note ? '' : 'empty'}" onclick="editLapNote(${index})" style="color: #666; font-size: 0.9em; font-style: italic; padding: 8px; background: white; border-radius: 4px; cursor: pointer;">
+                            ${lap.note || 'Click to add note...'}
+                        </div>
+                        <div class="lap-notes-input" id="lap-notes-input-${index}" style="display: none;">
+                            <textarea id="lap-note-textarea-${index}" style="width: 100%; padding: 8px; border: 2px solid #667eea; border-radius: 4px; font-size: 0.9em; margin-bottom: 8px; resize: vertical; min-height: 60px;">${lap.note}</textarea>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="saveLapNote(${index})" style="flex: 1; padding: 6px 12px; font-size: 0.85em; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer;">Save</button>
+                                <button onclick="cancelEditLapNote(${index})" style="flex: 1; padding: 6px 12px; font-size: 0.85em; background: #e5e7eb; color: #666; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        lapsList.innerHTML = html;
+        
+        if (laps.length > 1) {
+            document.getElementById('lapStats').style.display = 'flex';
+            document.getElementById('fastestLap').textContent = formatTime(fastest);
+            document.getElementById('slowestLap').textContent = formatTime(slowest);
+            document.getElementById('avgLap').textContent = formatTime(average);
+        }
+    }
+    
+    function editLapNote(index) {
+        // Hide all displays, show this input
+        document.querySelectorAll('.lap-notes-display').forEach(el => el.style.display = 'block');
+        document.querySelectorAll('.lap-notes-input').forEach(el => el.style.display = 'none');
+        
+        const lapItem = document.getElementById(`lap-${index}`);
+        lapItem.querySelector('.lap-notes-display').style.display = 'none';
+        document.getElementById(`lap-notes-input-${index}`).style.display = 'block';
+        
+        document.getElementById(`lap-note-textarea-${index}`).focus();
+    }
+    
+    function saveLapNote(index) {
+        const textarea = document.getElementById(`lap-note-textarea-${index}`);
+        laps[index].note = textarea.value;
+        updateLapsDisplay();
+    }
+    
+    function cancelEditLapNote(index) {
+        updateLapsDisplay();
+    }
+    
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = (seconds % 60).toFixed(1);
+        return mins > 0 ? `${mins}:${secs.padStart(4, '0')}` : `${secs}s`;
+    }
+    
+    async function stopTimer() {
+        clearInterval(timerInterval);
+        
+        const duration = (Date.now() - startTime) / 1000;
+        
+        // Update UI
+        document.getElementById('lapBtn').style.display = 'none';
+        document.getElementById('stopBtn').style.display = 'none';
+        document.getElementById('saveBtn').style.display = 'block';
+        
+        // Restore notes field to overall notes
+        const notesField = document.getElementById('notes');
+        const notesLabel = notesField.previousElementSibling;
+        notesLabel.innerHTML = 'Overall Notes (Optional)';
+        notesField.placeholder = 'General observations about this run';
+        notesField.value = '';
+        notesField.disabled = false;
+        
+        try {
+            await fetch('/stop', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    duration,
+                    laps: laps.length > 0 ? laps : null
+                })
+            });
+        } catch (error) {
+            console.error('Error stopping timer:', error);
+        }
+    }
+    
+    async function saveTimer() {
+        try {
+            const notes = document.getElementById('notes').value.trim();
+            
+            const response = await fetch('/save', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    notes: notes || '',
+                    laps: laps.length > 0 ? laps : null
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'saved') {
+                const lapInfo = laps.length > 0 ? ` (${laps.length} laps)` : '';
+                showMessage(`✅ Saved! Duration: ${data.duration.toFixed(2)}s${lapInfo}`, 'success');
+                resetTimer();
+            } else {
+                showMessage('❌ Error saving', 'error');
+            }
+        } catch (error) {
+            console.error('Error saving timer:', error);
+            showMessage('❌ Error saving', 'error');
+        }
+    }
+    
+    function updateTimerDisplay() {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const hours = Math.floor(elapsed / 3600);
+        const minutes = Math.floor((elapsed % 3600) / 60);
+        const seconds = elapsed % 60;
+        
+        document.getElementById('timerDisplay').textContent = 
+            `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+    
+    function resetTimer() {
+        document.getElementById('timerDisplay').textContent = '00:00:00';
+        document.getElementById('saveBtn').style.display = 'none';
+        document.getElementById('startBtn').style.display = 'block';
+        document.getElementById('lapsContainer').classList.remove('active');
+        
+        // Restore notes field label
+        const notesField = document.getElementById('notes');
+        const notesLabel = notesField.previousElementSibling;
+        notesLabel.innerHTML = 'Notes (Optional)';
+        notesField.placeholder = 'Any observations?';
+        notesField.value = '';
+        
+        laps = [];
+        updateLapsDisplay();
+        
+        disableInputs(false);
+    }
+    
+    function disableInputs(disabled) {
+        document.getElementById('graphSelect').disabled = disabled;
+        document.getElementById('edgeSelect').disabled = disabled;
+        document.getElementById('operator').disabled = disabled;
+        document.getElementById('batchId').disabled = disabled;
+        // Don't disable notes - we're using it for lap notes during timing
+    }
+    
+    function showMessage(message, type) {
+        const statusEl = document.getElementById('statusMessage');
+        statusEl.textContent = message;
+        statusEl.className = `status-message ${type}`;
+        statusEl.style.display = 'block';
+        
+        setTimeout(() => {
+            statusEl.style.display = 'none';
+        }, 3000);
+    }
+</script>
 </body>
 </html>

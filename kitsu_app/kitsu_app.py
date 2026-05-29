@@ -1203,5 +1203,9 @@ def analyze_laps(graph_id):
             'message': 'Error analyzing laps'
         }), 500
 
+@app.route("/health", methods=["GET"])
+def health():
+    return {"status": "ok"}, 200
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')
